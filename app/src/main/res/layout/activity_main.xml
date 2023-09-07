@@ -52,6 +52,16 @@
                 android:inputType="text"
                 app:layout_constraintTop_toTopOf="parent"/>
 
+            <Button
+                android:id="@+id/btnmark2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="150dp"
+                android:layout_marginEnd="0dp"
+                android:text="Marker2"
+                app:layout_constraintEnd_toStartOf="@+id/btnmark1"
+                app:layout_constraintStart_toStartOf="parent" />
+
         </com.naver.maps.map.MapView>
 
     </LinearLayout>

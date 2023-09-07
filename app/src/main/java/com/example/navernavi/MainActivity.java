@@ -3,13 +3,16 @@ package com.example.navernavi;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
@@ -28,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapView mapView;
     private static NaverMap naverMap;
     private Marker marker1 = new Marker();
-    //Double l1,l2;
+    private double l1, l2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +45,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Thread(() -> {
                     requestGeocoding();
                 }).start();
-                //setMark(marker1,l1,l2,R.drawable.baseline_place_24);
+                setMark(marker1, l1, l2, R.drawable.baseline_place_24);
+                CameraPosition cameraPosition = new CameraPosition(
+                        new LatLng(l1,l2),   // 위치 지정
+                        18,                                     // 줌 레벨
+                        0,                                       // 기울임 각도
+                        0                                     // 방향
+                );
+                if(l1 != 0){ naverMap.setCameraPosition(cameraPosition); }
+
             }
         });
         // + 버튼 클릭시 로그인 페이지 전환
@@ -50,10 +61,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         pageTrans.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(),SubActivity.class);
+                Intent intent = new Intent(getApplicationContext(), SubActivity.class);
                 startActivity(intent);
             }
         });
+
+//        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+//        imm.hideSoftInputFromWindow()
 
 
         // 네이버 지도 UI출력
@@ -61,21 +75,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
     }
+
     private void setMark(Marker marker, double lat, double lng, int resourceID) {
-        //원근감 표시
-        marker.setIconPerspectiveEnabled(true);
-        //아이콘 지정
-        marker.setIcon(OverlayImage.fromResource(resourceID));
-        //마커의 투명도
-        marker.setAlpha(0.8f);
-        //마커 위치
-        marker.setPosition(new LatLng(lat, lng));
-        //마커 우선순위
-        marker.setZIndex(10);
-        //마커 표시
-        marker.setMap(naverMap);
-
-
+        try {
+            //원근감 표시
+            marker.setIconPerspectiveEnabled(true);
+            //아이콘 지정
+            marker.setIcon(OverlayImage.fromResource(resourceID));
+            //마커의 투명도
+            marker.setAlpha(0.8f);
+            //마커 위치
+            marker.setPosition(new LatLng(lat, lng));
+            //마커 우선순위
+            marker.setZIndex(10);
+            //마커 표시
+            marker.setMap(naverMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -89,16 +106,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setLayerGroupEnabled(naverMap.LAYER_GROUP_BUILDING, true);
 
         //위치 및 각도 조정
-//        CameraPosition cameraPosition = new CameraPosition(
-//                new LatLng(37.51315056189764,126.94673392918533),   // 위치 지정
-//                18,                                     // 줌 레벨
-//                0,                                       // 기울임 각도
-//                0                                     // 방향
-//        );
-//        naverMap.setCameraPosition(cameraPosition);
+        CameraPosition cameraPosition = new CameraPosition(
+                new LatLng(37.51315056189764,126.94673392918533),   // 위치 지정
+                18,                                     // 줌 레벨
+                0,                                       // 기울임 각도
+                0                                     // 방향
+        );
+        naverMap.setCameraPosition(cameraPosition);
     }
 
-    private void requestGeocoding(){
+    private void requestGeocoding() {
         try {
             TextView tmptxt;
             tmptxt = findViewById(R.id.textView2);
@@ -109,15 +126,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
             String addr = searchBar.getText().toString(); //노량진동 147-12
-            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= "+ URLEncoder.encode(addr,"UTF-8");
+            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID","52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY","xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
                 conn.setDoInput(true);
 
                 int responseCode = conn.getResponseCode();
@@ -130,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 String line = null;
                 while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line +"\n");
+                    stringBuilder.append(line + "\n");
                 }
 
                 int indexFirst;
@@ -144,10 +161,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 indexLast = stringBuilder.indexOf("\",\"distance\":");
                 String y = stringBuilder.substring(indexFirst + 5, indexLast);
 
-                tmptxt.setText("X: " + x + ", "+"Y: "+y);
+                tmptxt.setText("X: " + x + ", " + "Y: " + y);
 
                 //마커 표시 및 카메라 이동
-                double l1,l2;
+                //double l1,l2;
                 l1 = Double.parseDouble(y);
                 l2 = Double.parseDouble(x);
 
@@ -159,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 }
+
 
 
 //curl -G "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode" \
