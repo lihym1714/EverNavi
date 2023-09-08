@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -12,26 +13,40 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraPosition;
+import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.overlay.OverlayImage;
+import com.naver.maps.map.overlay.PathOverlay;
+import com.naver.maps.map.util.FusedLocationSource;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private MapView mapView;
     private static NaverMap naverMap;
     private Marker marker1 = new Marker();
-    private double l1, l2;
+    private Marker marker2 = new Marker();
+
+    private double l1, l2;  //모든 함수에서 좌표값을 사용하기 위한 location 전역변수
+
+    private FusedLocationSource locationSource;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
+//    private static final String[] PERMISSIONS = {
+//            Manifest.permission.ACCESS_FINE_LOCATION,
+//            Manifest.permission.ACCESS_COARSE_LOCATION
+//    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,17 +60,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Thread(() -> {
                     requestGeocoding();
                 }).start();
-                setMark(marker1, l1, l2, R.drawable.baseline_place_24);
-                CameraPosition cameraPosition = new CameraPosition(
-                        new LatLng(l1,l2),   // 위치 지정
-                        18,                                     // 줌 레벨
-                        0,                                       // 기울임 각도
-                        0                                     // 방향
-                );
-                if(l1 != 0){ naverMap.setCameraPosition(cameraPosition); }
-
+                setMark(marker1, l1, l2, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
             }
         });
+        Button btnMark2 = (Button) findViewById(R.id.btnmark2);
+        btnMark2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new Thread(() -> {
+                    requestGeocoding();
+                }).start();
+                setMark(marker2, l1, l2, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+            }
+        });
+        Button lootBtn = (Button) findViewById(R.id.lootGen);
+        lootBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestDirection();
+            }
+        });
+
         // + 버튼 클릭시 로그인 페이지 전환
         Button pageTrans = (Button) findViewById(R.id.btn1);
         pageTrans.setOnClickListener(new View.OnClickListener() {
@@ -78,6 +103,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void setMark(Marker marker, double lat, double lng, int resourceID) {
         try {
+            marker.setHeight(70);
+            marker.setWidth(50);
             //원근감 표시
             marker.setIconPerspectiveEnabled(true);
             //아이콘 지정
@@ -90,6 +117,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             marker.setZIndex(10);
             //마커 표시
             marker.setMap(naverMap);
+
+            cameraSet();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -163,8 +192,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 tmptxt.setText("X: " + x + ", " + "Y: " + y);
 
-                //마커 표시 및 카메라 이동
-                //double l1,l2;
                 l1 = Double.parseDouble(y);
                 l2 = Double.parseDouble(x);
 
@@ -175,17 +202,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
+
+    private void requestDirection() {
+        try {
+
+
+            PathOverlay path = new PathOverlay();
+            path.setColor(Color.YELLOW);
+            path.setCoords(Arrays.asList(
+                    new LatLng(37.55225816292672, 126.95692239769714),
+                    new LatLng(37.55091994383829, 126.95627811882665),
+                    new LatLng(37.55077141892128, 126.95665731262389),
+                    new LatLng(37.54864019679784, 126.95568534439954),
+                    new LatLng(37.54819922377543, 126.95708316098926),
+                    new LatLng(37.5473030517265, 126.95797764697222),
+                    new LatLng(37.54697398450087, 126.95741202900021)
+            ));
+            path.setMap(naverMap);
+            double loc1,loc2;
+            loc1 = (37.55225816292672+37.54697398450087)/2;
+            loc2 = (126.95692239769714+126.95741202900021)/2;
+            CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
+                    new LatLng(loc1, loc2),15).animate(CameraAnimation.Easing);
+            if(l1 != 0){ naverMap.moveCamera(cameraUpdate); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void cameraSet() {
+        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
+                new LatLng(l1, l2),18).animate(CameraAnimation.Easing);
+        if(l1 != 0){ naverMap.moveCamera(cameraUpdate); }
+    }
 }
 
-
-
-//curl -G "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode" \
-//        --data-urlencode "query={%EB%B6%84%EB%8B%B9%EA%B5%AC%20%EC%84%B1%EB%82%A8%EB%8C%80%EB%A1%9C%20601}" \
-//        -H "X-NCP-APIGW-API-KEY-ID: {"52qqm2ev4e"}" \
-//        -H "X-NCP-APIGW-API-KEY: {"xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM"}"
-
-//curl -G "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode" \
-//        --data-urlencode "query=분당구 불정로 6" \
-//        --data-urlencode "coordinate=127.1054328,37.3595963" \
-//        -H "X-NCP-APIGW-API-KEY-ID: {52qqm2ev4e}" \
-//        -H "X-NCP-APIGW-API-KEY: {xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM}"

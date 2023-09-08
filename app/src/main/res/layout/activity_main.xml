@@ -7,6 +7,7 @@
     tools:context=".MainActivity">
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -21,7 +22,7 @@
                 android:id="@+id/btnmark1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/marker1" />
+                android:text="start" />
 
             <Button
                 android:id="@+id/btn1"
@@ -39,7 +40,8 @@
                 android:id="@+id/textView2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="X,Y"
+                android:layout_marginTop="100dp"
+                android:text="Geocode"
                 android:textAlignment="viewEnd" />
 
             <EditText
@@ -50,7 +52,8 @@
                 android:ems="10"
                 android:hint="search"
                 android:inputType="text"
-                app:layout_constraintTop_toTopOf="parent"/>
+                android:padding="10dp"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <Button
                 android:id="@+id/btnmark2"
@@ -58,13 +61,24 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="150dp"
                 android:layout_marginEnd="0dp"
-                android:text="Marker2"
+                android:text="end"
                 app:layout_constraintEnd_toStartOf="@+id/btnmark1"
                 app:layout_constraintStart_toStartOf="parent" />
+
+            <Button
+                android:id="@+id/lootGen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="300dp"
+                android:text="lootGen"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </com.naver.maps.map.MapView>
 
     </LinearLayout>
+
+
 
 
     <!--    <androidx.fragment.app.FragmentContainerView-->
