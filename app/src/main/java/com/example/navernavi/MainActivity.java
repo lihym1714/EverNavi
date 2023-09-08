@@ -77,6 +77,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         lootBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                new Thread(() -> {
+//                    requestDirection();
+//                }).start();
                 requestDirection();
             }
         });
@@ -206,6 +209,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void requestDirection() {
         try {
 
+//            BufferedReader bufferedReader;
+//            StringBuilder stringBuilder = new StringBuilder();
+//
+//            String depart = "37.54388556680907,126.9509780458166";
+//            String arrival = "37.55260934533983,126.95635917949923";
+//            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
+//            URL url = new URL(query);
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            if (conn != null) {
+//                conn.setConnectTimeout(5000);
+//                conn.setReadTimeout(5000);
+//                conn.setRequestMethod("GET");
+//                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
+//                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+//                conn.setDoInput(true);
+//
+//                int responseCode = conn.getResponseCode();
+//
+//                if (responseCode == 200) { //200
+//                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//                } else {
+//                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//                }
+//
+//                String line = null;
+//                while ((line = bufferedReader.readLine()) != null) {
+//                    stringBuilder.append(line + "\n");
+//                }
+//            }
 
             PathOverlay path = new PathOverlay();
             path.setColor(Color.YELLOW);
