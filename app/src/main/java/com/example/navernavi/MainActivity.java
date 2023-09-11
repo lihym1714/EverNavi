@@ -223,6 +223,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String depart = String.valueOf(depY)+","+String.valueOf(depX);
             String arrival = String.valueOf(arvY)+","+String.valueOf(arvX);
             String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
+            String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
@@ -269,6 +270,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
+
+
+
 
 
 //    private void requestDirectionTest() {
