@@ -79,8 +79,6 @@
     </LinearLayout>
 
 
-
-
     <!--    <androidx.fragment.app.FragmentContainerView-->
     <!--        android:id="@+id/map_fragment"-->
     <!--        android:name="com.naver.maps.map.MapFragment"-->
