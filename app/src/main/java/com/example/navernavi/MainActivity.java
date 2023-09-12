@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,7 +17,6 @@ import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.overlay.ArrowheadPathOverlay;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.overlay.OverlayImage;
@@ -30,8 +28,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Locale;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -82,10 +81,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 new Thread(() -> {
-                    requestDirection();
+                    requestDirect(1);
                 }).start();
-                drawPath(loot);
-
+//                drawPath(loot);
             }
         });
 
@@ -214,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void requestDirection() {
+    public void requestDirect(int div) {
         try {
 
             BufferedReader bufferedReader;
@@ -236,43 +234,51 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 int responseCode = conn.getResponseCode();
 
-                if (responseCode == 200) { //200
-                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                } else {
-                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                }
+                bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
                 String line = null;
                 while ((line = bufferedReader.readLine()) != null) {
                     stringBuilder.append(line + "\n");
                 }
 
-                ArrayList<LatLng> Loot = new ArrayList<>();
 
-                int indexFirst = stringBuilder.indexOf("\"path\":");
-                int indexLast = stringBuilder.indexOf(",\"section\"");
-                String coord = stringBuilder.substring(indexFirst + 8,indexLast-1);
-                String[] s = (coord.split(","));
-                int lenCoord = (int) s.length;
+                int indexFirst,indexLast;
+                if(div == 0) { //0 = 루트 생성 , 1 = 트래픽 검색
+                    ArrayList<LatLng> Loot = new ArrayList<>();
 
-                for(int i = 0; lenCoord > i; i+=2) {
-                    Double x,y;
-                    y = Double.parseDouble((s[i].replace("[","")));
-                    x = Double.parseDouble((s[i+1].replace("]","")));
-                    Loot.add(new LatLng(x,y));
+                    indexFirst = stringBuilder.indexOf("\"path\":");
+                    indexLast = stringBuilder.indexOf(",\"section\"");
+                    String[] coord = (stringBuilder.substring(indexFirst + 8,indexLast-1)).split(",");
+
+                    for(int i = 0; coord.length > i; i+=2) {
+                        Double x,y;
+                        y = Double.parseDouble((coord[i].replace("[","")));
+                        x = Double.parseDouble((coord[i+1].replace("]","")));
+                        Loot.add(new LatLng(x,y));
+                    }
+                    loot = Loot;
+                } else if (div == 1) {
+                    SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    indexFirst = stringBuilder.indexOf("\"currentDateTime\":");
+                    indexLast = stringBuilder.indexOf("\"route");
+
+                    Date currentTime = (Date) DateFormat.parse(stringBuilder.substring(indexFirst+19,indexLast-2).replace("T"," "));
+                    System.out.println(currentTime);
+
+                    indexFirst = stringBuilder.indexOf("\"duration\":");
+                    indexLast = stringBuilder.indexOf("\"etaService");
+
+                    double departureTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
+                    System.out.println(departureTime);
+
                 }
-
-                loot = Loot;
             }
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
     }
-
-
-
 
 
 //    private void requestDirectionTest() {

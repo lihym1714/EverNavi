@@ -7,12 +7,16 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+
 public class UserActivity extends AppCompatActivity {
+
+    MainActivity mainActivity = new MainActivity();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
+
 
         // 맵 버튼
         Button pageTransBtn = (Button) findViewById(R.id.btn2);
