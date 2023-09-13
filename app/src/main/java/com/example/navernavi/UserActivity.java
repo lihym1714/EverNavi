@@ -7,16 +7,33 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 
 public class UserActivity extends AppCompatActivity {
 
-    MainActivity mainActivity = new MainActivity();
+    int arvTime=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
 
+        Button bookMark = (Button) findViewById(R.id.button);
+        bookMark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(() -> {
+                    requestDirect("37.5523347,126.9566545,","37.5470212,126.9572262");
+                }).start();
+                bookMark.setText(arvTime+"");
+            }
+        });
 
         // 맵 버튼
         Button pageTransBtn = (Button) findViewById(R.id.btn2);
@@ -37,5 +54,51 @@ public class UserActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    public void requestDirect(String depart, String arrival) {
+        try {
+
+            BufferedReader bufferedReader;
+            StringBuilder stringBuilder = new StringBuilder();
+
+            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
+            String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
+            URL url = new URL(query);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            if (conn != null) {
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setDoInput(true);
+
+                bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                String line = null;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line + "\n");
+                }
+
+                int indexFirst,indexLast;
+                SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                indexFirst = stringBuilder.indexOf("\"currentDateTime\":");
+                indexLast = stringBuilder.indexOf("\"route");
+
+                Date currentTime = (Date) DateFormat.parse(stringBuilder.substring(indexFirst+19,indexLast-2).replace("T"," "));
+                System.out.println(currentTime);
+
+                indexFirst = stringBuilder.indexOf("\"duration\":");
+                indexLast = stringBuilder.indexOf("\"etaService");
+
+                int arrivalTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
+
+                arvTime = arrivalTime;
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

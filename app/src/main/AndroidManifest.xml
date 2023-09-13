@@ -32,6 +32,10 @@
             android:name=".SubActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".DirectReq"
+            android:exported="false" />
+
         <meta-data
             android:name="com.naver.maps.map.CLIENT_ID"
             android:value="52qqm2ev4e" />
