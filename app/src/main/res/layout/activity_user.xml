@@ -8,7 +8,7 @@
 
 
     <Button
-        android:id="@+id/btn2"
+        android:id="@+id/btnMap"
         style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -23,7 +23,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btnReturn"
+        android:id="@+id/btnPlus"
         style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -31,7 +31,7 @@
         android:layout_marginTop="665dp"
         android:layout_marginEnd="80dp"
         android:layout_marginBottom="16dp"
-        app:icon="@android:drawable/ic_menu_revert"
+        app:icon="@android:drawable/ic_input_add"
         app:iconTint="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -50,9 +50,13 @@
 
         <Button
             android:id="@+id/button"
+
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Button"
-            android:visibility="visible" />
+            android:layout_height="60dp"
+            android:background="@drawable/button_drawable1"
+
+            android:text="1번 경로"
+            android:textColor="#000000"
+            android:textSize="30sp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

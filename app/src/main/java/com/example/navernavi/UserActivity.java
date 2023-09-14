@@ -17,7 +17,7 @@ import java.util.Date;
 
 public class UserActivity extends AppCompatActivity {
 
-    int arvTime=0;
+    String arvTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,14 +29,14 @@ public class UserActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
-                    requestDirect("37.5523347,126.9566545,","37.5470212,126.9572262");
+                    requestDirect("126.9566545,37.5523347","126.9572262,37.5470212");
                 }).start();
                 bookMark.setText(arvTime+"");
             }
         });
 
         // 맵 버튼
-        Button pageTransBtn = (Button) findViewById(R.id.btn2);
+        Button pageTransBtn = (Button) findViewById(R.id.btnMap);
         pageTransBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -45,13 +45,12 @@ public class UserActivity extends AppCompatActivity {
             }
         });
 
-        // 리턴 버튼
-        Button returnBtn = (Button) findViewById(R.id.btnReturn);
+        // 북마크 추가 버튼
+        Button returnBtn = (Button) findViewById(R.id.btnPlus);
         returnBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(),MainActivity.class);
-                startActivity(intent);
+
             }
         });
     }
@@ -94,8 +93,14 @@ public class UserActivity extends AppCompatActivity {
 
                 int arrivalTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
 
-                arvTime = arrivalTime;
-
+                long hour;
+                long minute = Math.round(arrivalTime/60);
+                long second = Math.round(arrivalTime%60);
+                if(minute >= 60) {
+                    hour = Math.round(minute/60);
+                    minute = Math.round(minute%60);
+                    arvTime = ("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
+                } else { arvTime = ("예상 소요 시간 : "+minute+"분 "+second+"초"); }
             }
         } catch (Exception e) {
             e.printStackTrace();

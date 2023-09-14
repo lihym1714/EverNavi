@@ -7,7 +7,7 @@
     tools:context=".SubActivity">
 
     <Button
-        android:id="@+id/btn2"
+        android:id="@+id/btnMap"
         style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -31,9 +31,9 @@
         android:layout_marginBottom="556dp"
         android:fontFamily="monospace"
         android:lineSpacingExtra="8sp"
-        android:text="Login"
+        android:text="BookMark"
         android:textAlignment="center"
-        android:textSize="34sp"
+        android:textSize="30sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -41,7 +41,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
-        android:id="@+id/loginID"
+        android:id="@+id/departureInput"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="100dp"
@@ -49,7 +49,7 @@
         android:layout_marginEnd="100dp"
         android:layout_marginBottom="465dp"
         android:ems="10"
-        android:hint="ID"
+        android:hint="Departure"
         android:inputType="text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -57,7 +57,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
     <EditText
-        android:id="@+id/loginPW"
+        android:id="@+id/ArrivalInput"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="100dp"
@@ -65,40 +65,24 @@
         android:layout_marginEnd="101dp"
         android:layout_marginBottom="389dp"
         android:ems="10"
-        android:hint="PW"
+        android:hint="Arrival"
         android:inputType="textPassword"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginID" />
+        app:layout_constraintTop_toBottomOf="@+id/departureInput" />
 
     <Button
-        android:id="@+id/Login"
+        android:id="@+id/Save"
         android:layout_width="110dp"
         android:layout_height="50dp"
         android:layout_marginStart="150dp"
         android:layout_marginTop="26dp"
         android:layout_marginEnd="150dp"
-        android:text="Login"
+        android:text="Save"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/Register"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginPW" />
-
-    <Button
-        android:id="@+id/Register"
-        android:layout_width="110dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="150dp"
-        android:layout_marginEnd="150dp"
-        android:layout_marginBottom="234dp"
-        android:text="Register"
-        android:textAlignment="center"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/Login" />
+        app:layout_constraintTop_toBottomOf="@+id/ArrivalInput" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

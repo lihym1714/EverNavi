@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
+import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
@@ -52,18 +53,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     MultipartPathOverlay multipartPath = new MultipartPathOverlay();
 
     private double depX, depY, arvX, arvY;  //모든 함수에서 좌표값을 사용하기 위한 location 전역변수
-
-    private FusedLocationSource locationSource;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
-//    private static final String[] PERMISSIONS = {
-//            Manifest.permission.ACCESS_FINE_LOCATION,
-//            Manifest.permission.ACCESS_COARSE_LOCATION
-//    };
+    private FusedLocationSource locationSource;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
+
+
+        // 네이버 지도 UI출력
+        mapView = (MapView) findViewById(R.id.map_view);
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
+
         // 마크 버튼 클릭시 지정된 좌표에 마크 표시
         Button btnMark = (Button) findViewById(R.id.btnmark1);
         btnMark.setOnClickListener(new View.OnClickListener() {
@@ -91,6 +98,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         lootBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (0>=depX) {
+                    depX = locationSource.getLastLocation().getLatitude();
+                    depY = locationSource.getLastLocation().getLongitude();
+                }
                 new Thread(() -> {
                     requestDirect(0,depY+","+depX,arvY+","+arvX);
                     requestDirect(1,depY+","+depX,arvY+","+arvX);
@@ -100,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        // + 버튼 클릭시 로그인 페이지 전환
+        // + 버튼 클릭시 북마크 페이지 전환
         Button pageTrans = (Button) findViewById(R.id.btn1);
         pageTrans.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,14 +121,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-//        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-//        imm.hideSoftInputFromWindow()
-
-
-        // 네이버 지도 UI출력
-        mapView = (MapView) findViewById(R.id.map_view);
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
+        Button mapClear = (Button) findViewById(R.id.btnClear);
+        mapClear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                marker1.setMap(null);
+                marker2.setMap(null);
+            }
+        });
     }
 
 
@@ -147,20 +158,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(@NonNull NaverMap naverMap) {
         this.naverMap = naverMap;
 
+        naverMap.setLocationSource(locationSource);
+        naverMap.getUiSettings().setLocationButtonEnabled(true);
+        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
         //배경 지도 선택
         naverMap.setMapType(NaverMap.MapType.Navi);
 
         //건물 표시
         naverMap.setLayerGroupEnabled(naverMap.LAYER_GROUP_BUILDING, true);
 
+
         //위치 및 각도 조정
-        CameraPosition cameraPosition = new CameraPosition(
-                new LatLng(37.51315056189764,126.94673392918533),   // 위치 지정
-                18,                                     // 줌 레벨
-                0,                                       // 기울임 각도
-                0                                     // 방향
-        );
-        naverMap.setCameraPosition(cameraPosition);
+//        CameraPosition cameraPosition = new CameraPosition(
+//
+//                currentLoc,   // 위치 지정
+//                18,                                     // 줌 레벨
+//                0,                                       // 기울임 각도
+//                0                                     // 방향
+//        );
+//        naverMap.setCameraPosition(cameraPosition);
+
     }
 
     private void requestGeocode(int div) {
@@ -234,8 +251,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             depart = depY+","+depX;
             arrival = arvY+","+arvX;
-            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
+            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
+            query = query + "&" + option[0];
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {

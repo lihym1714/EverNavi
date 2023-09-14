@@ -15,7 +15,7 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         // 맵 버튼
-        Button pageTransBtn = (Button) findViewById(R.id.btn2);
+        Button pageTransBtn = (Button) findViewById(R.id.btnMap);
         pageTransBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -25,7 +25,7 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         // 리턴 버튼
-        Button returnBtn = (Button) findViewById(R.id.btnReturn);
+        Button returnBtn = (Button) findViewById(R.id.btnPlus);
         returnBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

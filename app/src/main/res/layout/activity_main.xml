@@ -32,8 +32,20 @@
                 android:layout_marginStart="340dp"
                 android:layout_marginTop="667dp"
                 android:layout_marginEnd="21dp"
-                android:layout_marginBottom="14dp"
+                android:layout_marginBottom="10dp"
                 app:icon="@android:drawable/ic_input_add"
+                tools:ignore="UnknownId" />
+
+            <Button
+                android:id="@+id/btnClear"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="290dp"
+                android:layout_marginTop="667dp"
+                android:layout_marginEnd="21dp"
+                android:layout_marginBottom="10dp"
+                app:icon="@android:drawable/ic_delete"
                 tools:ignore="UnknownId" />
 
             <TextView

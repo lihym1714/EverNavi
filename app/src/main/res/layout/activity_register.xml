@@ -8,7 +8,7 @@
     tools:ignore="ExtraText">
 
     <Button
-        android:id="@+id/btn2"
+        android:id="@+id/btnMap"
         style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -23,7 +23,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btnReturn"
+        android:id="@+id/btnPlus"
         style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -91,7 +91,7 @@
         app:layout_constraintTop_toBottomOf="@+id/registerID" />
 
     <Button
-        android:id="@+id/Login"
+        android:id="@+id/Save"
         android:layout_width="110dp"
         android:layout_height="50dp"
         android:layout_marginStart="150dp"
