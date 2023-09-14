@@ -21,7 +21,10 @@ import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.overlay.MultipartPathOverlay;
 import com.naver.maps.map.overlay.OverlayImage;
+import com.naver.maps.map.overlay.PathOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
+
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -44,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Marker marker1 = new Marker();
     private Marker marker2 = new Marker();
     List<List<LatLng>> loot;
+    ArrayList<LatLng> loot2 = new ArrayList<>();
     List<Integer> Congestion = new ArrayList<>();
     MultipartPathOverlay multipartPath = new MultipartPathOverlay();
 
@@ -89,9 +93,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View view) {
                 new Thread(() -> {
                     requestDirect(0,depY+","+depX,arvY+","+arvX);
+                    requestDirect(1,depY+","+depX,arvY+","+arvX);
                 }).start();
                 drawPath(loot);
-
+                cameraSet((depX+arvX)/2,(depY+arvY)/2);
             }
         });
 
@@ -283,12 +288,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         congestion.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
                                 tmpArr.get(0)+17).replaceAll("[^0-9]","")));
                         tmpArr.remove(0);}
+                    loot2.add(new LatLng(depX,depY));
                     for(int i = 0; coord.length > i; i+=2) {
                         Double x,y;
                         y = Double.parseDouble((coord[i].replace("[","")));
                         x = Double.parseDouble((coord[i+1].replace("]","")));
                         Loot.add(new LatLng(x,y));
+                        loot2.add(new LatLng(x,y));
                     }
+                    loot2.add(new LatLng(arvX,arvY));
 
                     ArrayList<List<LatLng>> multiPath = new ArrayList<>();
                     ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
@@ -321,7 +329,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
                     multiPath.add(Loot);
-                    System.out.println(Arrays.asList(multiPath));
+                    Congestion.add(1);
 
                     loot = multiPath;
                     return div;
@@ -338,7 +346,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     double arrivalTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
 
-                    UserActivity user = new UserActivity();
+                    TextView tmptxt =  findViewById(R.id.textTime);
+
+                    long hour;
+                    long minute = Math.round(arrivalTime/60);
+                    long second = Math.round(arrivalTime%60);
+                    if(minute >= 60) {
+                        hour = Math.round(minute/60);
+                        minute = Math.round(minute%60);
+                        tmptxt.setText("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
+                    } else { tmptxt.setText("예상 소요 시간 : "+minute+"분 "+second+"초"); }
+
+
+
 
                     return Integer.parseInt(String.valueOf(arrivalTime));
                 }
@@ -353,28 +373,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void cameraSet(double x,double y) {
         CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
-                new LatLng(x, y),18).animate(CameraAnimation.Easing);
+                new LatLng(x, y),13).animate(CameraAnimation.Easing);
         naverMap.moveCamera(cameraUpdate);
     }
 
     private void drawPath(List<List<LatLng>> Loot) {
         try {
+            PathOverlay path2 = new PathOverlay();
             MultipartPathOverlay path = new MultipartPathOverlay();
             path.setCoordParts(Loot);
             List colorParts = new ArrayList<Color>();
             for(int i = 0;Congestion.size()>i;i++) {
                 switch (Congestion.get(i)) {
-                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.LTGRAY, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#1DDB16"), Color.WHITE, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.BLUE, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FFDF24"), Color.WHITE, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.YELLOW, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FF8224"), Color.WHITE, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.RED, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#ED0000"), Color.WHITE, Color.GRAY, Color.LTGRAY));
                         break;
                 }
             }
-
+            path2.setCoords(loot2);
+            path2.setColor(Color.parseColor("#AAAAAA"));
+            path2.setOutlineWidth(0);
+            path2.setMap(naverMap);
             path.setColorParts(colorParts);
             path.setMap(naverMap);
 
