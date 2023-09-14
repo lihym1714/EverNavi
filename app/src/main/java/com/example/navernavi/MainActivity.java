@@ -4,13 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.google.gson.JsonParser;
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
@@ -23,10 +23,6 @@ import com.naver.maps.map.overlay.MultipartPathOverlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -34,8 +30,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +43,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static NaverMap naverMap;
     private Marker marker1 = new Marker();
     private Marker marker2 = new Marker();
-    ArrayList<ArrayList> loot;
+    List<List<LatLng>> loot;
+    List<Integer> Congestion = new ArrayList<>();
     MultipartPathOverlay multipartPath = new MultipartPathOverlay();
 
     private double depX, depY, arvX, arvY;  //모든 함수에서 좌표값을 사용하기 위한 location 전역변수
@@ -92,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Thread(() -> {
                     requestDirect(0,depY+","+depX,arvY+","+arvX);
                 }).start();
-//                drawPath(loot);
+                drawPath(loot);
 
             }
         });
@@ -256,6 +254,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     ArrayList<LatLng> Loot = new ArrayList<>();
                     ArrayList<Integer> pointIndex = new ArrayList<>();
                     ArrayList<Integer> pointCount = new ArrayList<>();
+                    ArrayList<Integer> congestion = new ArrayList<>();
 
                     indexFirst = stringBuilder.indexOf("\"path\":");
                     indexLast = stringBuilder.indexOf(",\"section\"");
@@ -278,6 +277,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         pointCount.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
                                 tmpArr.get(0)+17).replaceAll("[^0-9]","")));
                         tmpArr.remove(0);}
+                    matcher = Pattern.compile("congestion").matcher(section);
+                    while (matcher.find()) { tmpArr.add(matcher.start()); }
+                    while(!tmpArr.isEmpty()) {
+                        congestion.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
+                                tmpArr.get(0)+17).replaceAll("[^0-9]","")));
+                        tmpArr.remove(0);}
                     for(int i = 0; coord.length > i; i+=2) {
                         Double x,y;
                         y = Double.parseDouble((coord[i].replace("[","")));
@@ -285,19 +290,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Loot.add(new LatLng(x,y));
                     }
 
-                    ArrayList<ArrayList> multiPath = new ArrayList<>();
+                    ArrayList<List<LatLng>> multiPath = new ArrayList<>();
                     ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
                     int cnt=0;
                     while(!pointIndex.isEmpty()) {
                         try {
                             if(pointIndex.get(0)+pointCount.get(0) == cnt) {
-                                multiPath.add((ArrayList) tmpPath.clone());
+                                multiPath.add((List<LatLng>) tmpPath.clone());
                                 tmpPath.clear();
                                 pointCount.remove(0);
                                 pointIndex.remove(0);
+                                Congestion.add(congestion.get(0));
+                                congestion.remove(0);
                             } else if (pointIndex.get(0) == cnt) {
-                                multiPath.add((ArrayList) tmpPath.clone());
+                                multiPath.add((List<LatLng>) tmpPath.clone());
                                 tmpPath.clear();
+                                Congestion.add(0);
                             }
                             if (pointIndex.get(0)+pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
                                 tmpPath.add(Loot.get(0));
@@ -313,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
                     multiPath.add(Loot);
-                    System.out.println(multiPath);
+                    System.out.println(Arrays.asList(multiPath));
 
                     loot = multiPath;
                     return div;
@@ -339,7 +347,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
 
-
         return div;
     }
 
@@ -350,14 +357,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.moveCamera(cameraUpdate);
     }
 
-    private void drawPath(ArrayList<ArrayList> Loot) {
+    private void drawPath(List<List<LatLng>> Loot) {
         try {
             MultipartPathOverlay path = new MultipartPathOverlay();
-//            path.setCoordParts(Loot);
-            System.out.println(Loot.subList(0,1));
-            System.out.println(Loot.subList(Loot.size()-2,Loot.size()-1));
-            System.out.println(Loot.subList(0,1));
-//            path.setColor(Color.BLUE);
+            path.setCoordParts(Loot);
+            List colorParts = new ArrayList<Color>();
+            for(int i = 0;Congestion.size()>i;i++) {
+                switch (Congestion.get(i)) {
+                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.LTGRAY, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                        break;
+                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.BLUE, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                        break;
+                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.YELLOW, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                        break;
+                    case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.RED, Color.WHITE, Color.GRAY, Color.LTGRAY));
+                        break;
+                }
+            }
+
+            path.setColorParts(colorParts);
             path.setMap(naverMap);
 
         } catch (Exception e) {
