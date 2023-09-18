@@ -5,7 +5,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -35,15 +34,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import okhttp3.internal.cache.DiskLruCache;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -57,9 +51,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     List<Integer> Congestion = new ArrayList<>();
     MultipartPathOverlay multipartPath = new MultipartPathOverlay();
 
-    private double depX, depY, arvX, arvY;  //모든 함수에서 좌표값을 사용하기 위한 location 전역변수
-//    private ArrayList<LatLng> wayLatlng = new ArrayList<>();
+    private double depX, depY, arvX, arvY;
+    private LatLng depart,arrival, tmpLoc;
     private LatLng wayLatlng;
+    //    private ArrayList<LatLng> wayLatlng = new ArrayList<>();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
 
@@ -77,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView = (MapView) findViewById(R.id.map_view);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        LinearLayout cardBar = (LinearLayout) findViewById(R.id.cardView);
 
         EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -89,11 +85,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
 
                     new Thread(() -> {
-                        requestGeocode(2);
-                        cameraSet(arvX, arvY,0);
+                        requestGeocode();
+                        cameraSet(tmpLoc,0);
                     }).start();
 
-                    LinearLayout cardBar = (LinearLayout) findViewById(R.id.cardView);
                     cardBar.setVisibility(View.VISIBLE);
                     return true;
                 }
@@ -106,56 +101,57 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnMark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                if(1 > depX) {depX = arvX;depY = arvY;}
-                cameraSet(depX, depY,0);
-                if (depX > 0) {
-                    setMark(marker1, depX, depY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-                }
+                depart = tmpLoc;
+                cameraSet(depart,0);
+                setMark(marker1, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
             }
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
         btnMark2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                cameraSet(arvX, arvY,0);
-                if(arvX > 0) {
-                    setMark(marker2, arvX, arvY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-                }
+                arrival = tmpLoc;
+                cameraSet(arrival,0);
+                setMark(marker2, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
             }
         });
-        Button lootBtn = (Button) findViewById(R.id.lootGen);
-        lootBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (0>=depX) {
-                    depX = locationSource.getLastLocation().getLatitude();
-                    depY = locationSource.getLastLocation().getLongitude();
-                }
-                new Thread(() -> {
-                    requestDirect(0,depY+","+depX,arvY+","+arvX,wayLatlng);
-                    requestDirect(1,depY+","+depX,arvY+","+arvX,wayLatlng);
-                }).start();
-                drawPath(loot);
-                if(arvX > 0) cameraSet((depX+arvX)/2,(depY+arvY)/2,2);
-            }
-        });
-
         Button WaypBtn = (Button) findViewById(R.id.btnWay);
         WaypBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 try {
-                    new Thread(() -> {
-                        requestGeocode(3);
-                        cameraSet(wayLatlng.latitude,wayLatlng.longitude,0);
-                    }).start();
+                    wayLatlng = tmpLoc;
+                    cameraSet(wayLatlng,0);
                     if(wayLatlng != null) {
-                        setMark(wayP1, wayLatlng.latitude, wayLatlng.longitude, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);
+                        setMark(wayP1, wayLatlng, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
+            }
+        });
+
+        Button lootBtn = (Button) findViewById(R.id.lootGen);
+        lootBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                cardBar.setVisibility(View.INVISIBLE);
+                if (depart == null) {
+                    depX = locationSource.getLastLocation().getLatitude();
+                    depY = locationSource.getLastLocation().getLongitude();
+                } else {
+                    depX = depart.latitude;
+                    depY = depart.longitude;
+                }
+                arvX = arrival.latitude;
+                arvY = arrival.longitude;
+                new Thread(() -> {
+                    requestDirect(0,depY+","+depX, arvY +","+ arvX,wayLatlng);
+                    requestDirect(1,depY+","+depX, arvY +","+ arvX,wayLatlng);
+                }).start();
+                drawPath(loot);
+//                if(tmpX > 0) cameraSet((depX+ tmpX)/2,(depY+ tmpY)/2,2);
             }
         });
 
@@ -192,21 +188,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //건물 표시
         naverMap.setLayerGroupEnabled(naverMap.LAYER_GROUP_BUILDING, true);
-
-
-        //위치 및 각도 조정
-//        CameraPosition cameraPosition = new CameraPosition(
-//
-//                currentLoc,   // 위치 지정
-//                18,                                     // 줌 레벨
-//                0,                                       // 기울임 각도
-//                0                                     // 방향
-//        );
-//        naverMap.setCameraPosition(cameraPosition);
-
     }
 
-    private void requestGeocode(int div) {
+    private void requestGeocode() {
         try {
             TextView tmptxt;
             tmptxt = findViewById(R.id.textView2);
@@ -218,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
-            String addr = searchBar.getText().toString(); //노량진동 147-12
+            String addr = searchBar.getText().toString();
             String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -255,16 +239,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String y = stringBuilder.substring(indexFirst + 5, indexLast);
 
                 tmptxt.setText("X: " + x + ", " + "Y: " + y);
-                if(div == 1) {
-                    depX = Double.parseDouble(y);
-                    depY = Double.parseDouble(x);
-                } else if (div == 2){
-                    arvX = Double.parseDouble(y);
-                    arvY = Double.parseDouble(x);
-                } else {
-                    wayLatlng = (new LatLng(Double.parseDouble(y),Double.parseDouble(x)));
-                }
 
+                tmpLoc = new LatLng(Double.parseDouble(y),Double.parseDouble(x));
                 bufferedReader.close();
                 conn.disconnect();
             }
@@ -273,17 +249,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public int requestDirect(int div, String depart, String arrival, LatLng wayPoint) {
+    public int requestDirect(int div, String Depart, String Arrival, LatLng wayPoint) {
         try {
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
-
-            if (1 > arvX) { showDialog("Warnings","Address is wrong or Empty"); }
-            String wayP = +wayPoint.longitude+","+wayPoint.latitude;
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
-            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival+"&waypoints="+wayP;
+            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+Depart+"&goal="+Arrival;
             query = query + "&" + option[0];
+            if(wayPoint != null) {
+                String wayP = wayPoint.longitude + "," + wayPoint.latitude;
+                query = query + "&waypoints=" + wayP;
+            }
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
@@ -414,7 +391,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    private void cameraSet(double x,double y,int zoom) {
+    private void cameraSet(LatLng loc,int zoom) {
         try {
             int zoomLevel = 13;
             if (zoom == 0) {zoomLevel = 17;}
@@ -422,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             else if (zoom == 2) {zoomLevel = 10;}
             else {zoomLevel = 6;}
             CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
-                    new LatLng(x, y),zoomLevel).animate(CameraAnimation.Easing);
+                    loc,zoomLevel).animate(CameraAnimation.Easing);
             naverMap.moveCamera(cameraUpdate);
         } catch (Exception e) {
             e.printStackTrace();
@@ -465,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void setMark(Marker marker, double lat, double lng, int resourceID) {
+    private void setMark(Marker marker, LatLng Loc, int resourceID) {
         try {
             marker.setHeight(70);
             marker.setWidth(50);
@@ -476,7 +453,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             //마커의 투명도
             marker.setAlpha(0.8f);
             //마커 위치
-            marker.setPosition(new LatLng(lat, lng));
+            marker.setPosition(Loc);
             //마커 우선순위
             marker.setZIndex(10);
             //마커 표시
