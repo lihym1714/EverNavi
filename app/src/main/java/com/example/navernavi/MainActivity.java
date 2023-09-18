@@ -5,11 +5,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.naver.maps.map.CameraAnimation;
@@ -38,6 +43,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import okhttp3.internal.cache.DiskLruCache;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -45,12 +52,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static NaverMap naverMap;
     private Marker marker1 = new Marker();
     private Marker marker2 = new Marker();
+    private Marker wayP1 = new Marker();
     List<List<LatLng>> loot;
-    ArrayList<LatLng> loot2 = new ArrayList<>();
     List<Integer> Congestion = new ArrayList<>();
     MultipartPathOverlay multipartPath = new MultipartPathOverlay();
 
     private double depX, depY, arvX, arvY;  //모든 함수에서 좌표값을 사용하기 위한 location 전역변수
+//    private ArrayList<LatLng> wayLatlng = new ArrayList<>();
+    private LatLng wayLatlng;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
 
@@ -69,16 +78,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
+        EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
+        searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        searchBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if(actionId == EditorInfo.IME_ACTION_DONE) {
+                    InputMethodManager imm;
+                    imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+
+                    new Thread(() -> {
+                        requestGeocode(2);
+                        cameraSet(arvX, arvY,0);
+                    }).start();
+
+                    LinearLayout cardBar = (LinearLayout) findViewById(R.id.cardView);
+                    cardBar.setVisibility(View.VISIBLE);
+                    return true;
+                }
+                return false;
+            }
+        });
+
         // 마크 버튼 클릭시 지정된 좌표에 마크 표시
         Button btnMark = (Button) findViewById(R.id.btnmark1);
         btnMark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view){
-                Thread thread1 = new Thread(() -> {
-                    requestGeocode(1);
-                    cameraSet(depX, depY);
-                });
-                thread1.start();
+                if(1 > depX) {depX = arvX;depY = arvY;}
+                cameraSet(depX, depY,0);
                 if (depX > 0) {
                     setMark(marker1, depX, depY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
                 }
@@ -88,12 +117,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnMark2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new Thread(() -> {
-                    requestGeocode(2);
-                }).start();
+                cameraSet(arvX, arvY,0);
                 if(arvX > 0) {
                     setMark(marker2, arvX, arvY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-                    cameraSet(arvX, arvY);
                 }
             }
         });
@@ -106,11 +132,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     depY = locationSource.getLastLocation().getLongitude();
                 }
                 new Thread(() -> {
-                    requestDirect(0,depY+","+depX,arvY+","+arvX);
-                    requestDirect(1,depY+","+depX,arvY+","+arvX);
+                    requestDirect(0,depY+","+depX,arvY+","+arvX,wayLatlng);
+                    requestDirect(1,depY+","+depX,arvY+","+arvX,wayLatlng);
                 }).start();
                 drawPath(loot);
-                if(arvX > 0) cameraSet((depX+arvX)/2,(depY+arvY)/2);
+                if(arvX > 0) cameraSet((depX+arvX)/2,(depY+arvY)/2,2);
+            }
+        });
+
+        Button WaypBtn = (Button) findViewById(R.id.btnWay);
+        WaypBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    new Thread(() -> {
+                        requestGeocode(3);
+                        cameraSet(wayLatlng.latitude,wayLatlng.longitude,0);
+                    }).start();
+                    if(wayLatlng != null) {
+                        setMark(wayP1, wayLatlng.latitude, wayLatlng.longitude, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
         });
 
@@ -119,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         pageTrans.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), SubActivity.class);
+                Intent intent = new Intent(getApplicationContext(), UserActivity.class);
                 startActivity(intent);
             }
         });
@@ -216,6 +261,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } else if (div == 2){
                     arvX = Double.parseDouble(y);
                     arvY = Double.parseDouble(x);
+                } else {
+                    wayLatlng = (new LatLng(Double.parseDouble(y),Double.parseDouble(x)));
                 }
 
                 bufferedReader.close();
@@ -226,18 +273,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public int requestDirect(int div, String depart, String arrival) {
+    public int requestDirect(int div, String depart, String arrival, LatLng wayPoint) {
         try {
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
 
             if (1 > arvX) { showDialog("Warnings","Address is wrong or Empty"); }
-
-            depart = depY+","+depX;
-            arrival = arvY+","+arvX;
+            String wayP = +wayPoint.longitude+","+wayPoint.latitude;
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
-            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
+            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival+"&waypoints="+wayP;
             query = query + "&" + option[0];
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -309,12 +354,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 pointCount.remove(0);
                                 pointIndex.remove(0);
                                 Congestion.add(congestion.get(0));
-                                congestion.remove(0);
+                                if(congestion.size() > 1) congestion.remove(0);
                             } else if (pointIndex.get(0) == cnt) {
                                 tmpPath.add(Loot.get(0));
                                 multiPath.add((List<LatLng>) tmpPath.clone());
                                 tmpPath.clear();
-                                Congestion.add(0);
+                                Congestion.add(congestion.get(0));
+//                                congestion.remove(0);
                             }
                             if (pointIndex.get(0)+pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
                                 tmpPath.add(Loot.get(0));
@@ -331,28 +377,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     if (Loot.size() > 1) {
                         multiPath.add(Loot);
-                        Congestion.add(0);
+                        Congestion.add(congestion.get(0));
                     } else {
                         Loot.add(Loot.get(0));
                         multiPath.add(Loot);
-                        Congestion.add(0);
+                        Congestion.add(congestion.get(0));
                     }
 
                     loot = multiPath;
                     return div;
                 } else if (div == 1) {
-                    SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    indexFirst = stringBuilder.indexOf("\"currentDateTime\":");
-                    indexLast = stringBuilder.indexOf("\"route");
-
-                    Date currentTime = (Date) DateFormat.parse(stringBuilder.substring(indexFirst+19,indexLast-2).replace("T"," "));
-                    System.out.println(currentTime);
-
-                    indexFirst = stringBuilder.indexOf("\"duration\":");
+                    indexFirst = stringBuilder.indexOf("\"goal\":");
                     indexLast = stringBuilder.indexOf("\"etaService");
 
-                    double arrivalTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
-
+                    String[] indexing = stringBuilder.substring(indexFirst+11,indexLast-1).split(",");
+                    long arrivalTime = Long.parseLong(indexing[indexing.length-1].replaceAll("[^0-9]",""))/1000;
+//인덱싱 재구성
                     TextView tmptxt =  findViewById(R.id.textTime);
 
                     long hour;
@@ -374,10 +414,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    private void cameraSet(double x,double y) {
-        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
-                new LatLng(x, y),13).animate(CameraAnimation.Easing);
-        naverMap.moveCamera(cameraUpdate);
+    private void cameraSet(double x,double y,int zoom) {
+        try {
+            int zoomLevel = 13;
+            if (zoom == 0) {zoomLevel = 17;}
+            else if (zoom == 1) {zoomLevel = 13;}
+            else if (zoom == 2) {zoomLevel = 10;}
+            else {zoomLevel = 6;}
+            CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
+                    new LatLng(x, y),zoomLevel).animate(CameraAnimation.Easing);
+            naverMap.moveCamera(cameraUpdate);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void drawPath(List<List<LatLng>> Loot) {

@@ -9,7 +9,8 @@
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
 
         <!-- 네이버 지도 -->
@@ -18,11 +19,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <Button
-                android:id="@+id/btnmark1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="start" />
 
             <Button
                 android:id="@+id/btn1"
@@ -67,25 +63,6 @@
                 android:padding="10dp"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <Button
-                android:id="@+id/btnmark2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="100dp"
-                android:layout_marginEnd="0dp"
-                android:text="end"
-                app:layout_constraintEnd_toStartOf="@+id/btnmark1"
-                app:layout_constraintStart_toStartOf="parent" />
-
-            <Button
-                android:id="@+id/btnWay"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="200dp"
-                android:layout_marginEnd="0dp"
-                android:text="wayP"
-                app:layout_constraintEnd_toStartOf="@+id/btnmark2"
-                app:layout_constraintStart_toStartOf="parent" />
 
             <Button
                 android:id="@+id/lootGen"
@@ -104,7 +81,41 @@
                 android:text="Time"
                 android:textAlignment="viewEnd" />
 
+            <LinearLayout
+                android:layout_marginTop="720dp"
+                android:id="@+id/cardView"
+                android:layout_width="412dp"
+                android:layout_height="95dp"
+                android:background="@color/cardview_shadow_start_color"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="invisible">
+
+                <Button
+                    android:id="@+id/btnmark1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="start" />
+
+                <Button
+                    android:id="@+id/btnWay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    android:text="wayP"
+                    app:layout_constraintEnd_toStartOf="@+id/btnmark2" />
+
+                <Button
+                    android:id="@+id/btnmark2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="end"
+                    app:layout_constraintEnd_toStartOf="@+id/btnmark1" />
+            </LinearLayout>
+
+
         </com.naver.maps.map.MapView>
+
 
     </LinearLayout>
 
