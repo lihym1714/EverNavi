@@ -1,6 +1,7 @@
 package com.example.navernavi;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -12,7 +13,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.naver.maps.map.CameraAnimation;
-import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapView;
@@ -25,8 +25,6 @@ import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PathOverlay;
 import com.naver.maps.map.util.FusedLocationSource;
 
-import org.w3c.dom.Text;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -34,7 +32,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -75,12 +73,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Button btnMark = (Button) findViewById(R.id.btnmark1);
         btnMark.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                new Thread(() -> {
+            public void onClick(View view){
+                Thread thread1 = new Thread(() -> {
                     requestGeocode(1);
-                }).start();
-                setMark(marker1, depX, depY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-                cameraSet(depX,depY);
+                    cameraSet(depX, depY);
+                });
+                thread1.start();
+                if (depX > 0) {
+                    setMark(marker1, depX, depY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+                }
             }
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
@@ -90,8 +91,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Thread(() -> {
                     requestGeocode(2);
                 }).start();
-                setMark(marker2, arvX, arvY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-                cameraSet(arvX,arvY);
+                if(arvX > 0) {
+                    setMark(marker2, arvX, arvY, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+                    cameraSet(arvX, arvY);
+                }
             }
         });
         Button lootBtn = (Button) findViewById(R.id.lootGen);
@@ -107,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     requestDirect(1,depY+","+depX,arvY+","+arvX);
                 }).start();
                 drawPath(loot);
-                cameraSet((depX+arvX)/2,(depY+arvY)/2);
+                if(arvX > 0) cameraSet((depX+arvX)/2,(depY+arvY)/2);
             }
         });
 
@@ -131,28 +134,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-
-    private void setMark(Marker marker, double lat, double lng, int resourceID) {
-        try {
-            marker.setHeight(70);
-            marker.setWidth(50);
-            //원근감 표시
-            marker.setIconPerspectiveEnabled(true);
-            //아이콘 지정
-            marker.setIcon(OverlayImage.fromResource(resourceID));
-            //마커의 투명도
-            marker.setAlpha(0.8f);
-            //마커 위치
-            marker.setPosition(new LatLng(lat, lng));
-            //마커 우선순위
-            marker.setZIndex(10);
-            //마커 표시
-            marker.setMap(naverMap);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
@@ -187,6 +168,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             EditText searchBar;
             searchBar = findViewById(R.id.editTextSearch);
+
+            if(1>searchBar.length()) {showDialog("Warning","주소지를 입력해주세요.");}
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
@@ -249,6 +232,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
 
+            if (1 > arvX) { showDialog("Warnings","Address is wrong or Empty"); }
+
             depart = depY+","+depX;
             arrival = arvY+","+arvX;
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
@@ -271,7 +256,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     stringBuilder.append(line + "\n");
                 }
 
-
                 int indexFirst,indexLast;
                 if(div == 0) { //0 = 루트 생성 , 1 = 트래픽 검색
                     ArrayList<LatLng> Loot = new ArrayList<>();
@@ -282,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     indexFirst = stringBuilder.indexOf("\"path\":");
                     indexLast = stringBuilder.indexOf(",\"section\"");
                     String[] coord = (stringBuilder.substring(indexFirst + 8,indexLast-1)).split(",");
-
 
                     indexFirst = stringBuilder.indexOf("\"guide");
                     String section = new String(stringBuilder.substring(indexLast+9,indexFirst));
@@ -306,22 +289,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         congestion.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
                                 tmpArr.get(0)+17).replaceAll("[^0-9]","")));
                         tmpArr.remove(0);}
-                    loot2.add(new LatLng(depX,depY));
                     for(int i = 0; coord.length > i; i+=2) {
                         Double x,y;
                         y = Double.parseDouble((coord[i].replace("[","")));
                         x = Double.parseDouble((coord[i+1].replace("]","")));
                         Loot.add(new LatLng(x,y));
-                        loot2.add(new LatLng(x,y));
                     }
-                    loot2.add(new LatLng(arvX,arvY));
 
                     ArrayList<List<LatLng>> multiPath = new ArrayList<>();
                     ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
+
                     int cnt=0;
                     while(!pointIndex.isEmpty()) {
                         try {
                             if(pointIndex.get(0)+pointCount.get(0) == cnt) {
+                                tmpPath.add(Loot.get(0));
                                 multiPath.add((List<LatLng>) tmpPath.clone());
                                 tmpPath.clear();
                                 pointCount.remove(0);
@@ -329,6 +311,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 Congestion.add(congestion.get(0));
                                 congestion.remove(0);
                             } else if (pointIndex.get(0) == cnt) {
+                                tmpPath.add(Loot.get(0));
                                 multiPath.add((List<LatLng>) tmpPath.clone());
                                 tmpPath.clear();
                                 Congestion.add(0);
@@ -346,8 +329,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             e.printStackTrace();
                         }
                     }
-                    multiPath.add(Loot);
-                    Congestion.add(1);
+                    if (Loot.size() > 1) {
+                        multiPath.add(Loot);
+                        Congestion.add(0);
+                    } else {
+                        Loot.add(Loot.get(0));
+                        multiPath.add(Loot);
+                        Congestion.add(0);
+                    }
 
                     loot = multiPath;
                     return div;
@@ -375,16 +364,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         tmptxt.setText("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
                     } else { tmptxt.setText("예상 소요 시간 : "+minute+"분 "+second+"초"); }
 
-
-
-
                     return Integer.parseInt(String.valueOf(arrivalTime));
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return div;
     }
 
@@ -411,18 +396,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         break;
                     case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#ED0000"), Color.WHITE, Color.GRAY, Color.LTGRAY));
                         break;
+                    case 4: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#AAAAAA"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    break;
                 }
             }
-            path2.setCoords(loot2);
-            path2.setColor(Color.parseColor("#AAAAAA"));
-            path2.setOutlineWidth(0);
-            path2.setMap(naverMap);
+//            path2.setCoords(loot2); path2.setColor(Color.parseColor("#AAAAAA"));
+//            path2.setOutlineWidth(0);
+//            path2.setOutlineColor(Color.WHITE); path2.setOutlineWidth(5);
+//            path2.setWidth(15);
+//            path2.setMap(naverMap);
+            path.setCoordParts(Loot);
+            path.setWidth(15);
+            path.setOutlineWidth(5);
             path.setColorParts(colorParts);
             path.setMap(naverMap);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void setMark(Marker marker, double lat, double lng, int resourceID) {
+        try {
+            marker.setHeight(70);
+            marker.setWidth(50);
+            //원근감 표시
+            marker.setIconPerspectiveEnabled(true);
+            //아이콘 지정
+            marker.setIcon(OverlayImage.fromResource(resourceID));
+            //마커의 투명도
+            marker.setAlpha(0.8f);
+            //마커 위치
+            marker.setPosition(new LatLng(lat, lng));
+            //마커 우선순위
+            marker.setZIndex(10);
+            //마커 표시
+            marker.setMap(naverMap);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showDialog(String title,String msg) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this)
+                .setTitle(title)
+                .setMessage(msg);
+        AlertDialog msgDlg =  alertBuilder.create();
+        msgDlg.show();
     }
 }
 
