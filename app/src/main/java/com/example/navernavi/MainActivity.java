@@ -4,10 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -54,13 +54,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private double depX, depY, arvX, arvY;
     private LatLng depart,arrival, tmpLoc;
-    private LatLng wayLatlng;
-    private ArrayList<LatLng> wayPoints = new ArrayList<>();
+    private final ArrayList<LatLng> wayPoints = new ArrayList<>();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,120 +70,111 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         LinearLayout cardBar = (LinearLayout) findViewById(R.id.cardView);
+        LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
+        cardBar2.setVisibility(View.INVISIBLE);
 
         EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        searchBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if(actionId == EditorInfo.IME_ACTION_DONE) {
-                    InputMethodManager imm;
-                    imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+        searchBar.setOnEditorActionListener((v, actionId, event) -> {
+            if(actionId == EditorInfo.IME_ACTION_DONE) {
+                InputMethodManager imm;
+                imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
 
-                    new Thread(() -> {
-                        requestGeocode();
-                        cameraSet(tmpLoc,0);
-                        searchBar.setText("");
-                    }).start();
+                new Thread(() -> {
+                    requestGeocode();
+                    if(tmpLoc != null) {cameraSet(tmpLoc,0);}
+                    searchBar.setText("");
+                }).start();
 
-                    cardBar.setVisibility(View.VISIBLE);
-                    return true;
-                }
-                return false;
+                cardBar.setVisibility(View.VISIBLE);
+                return true;
             }
+            return false;
         });
 
         // 마크 버튼 클릭시 지정된 좌표에 마크 표시
         Button btnMark = (Button) findViewById(R.id.btnmark1);
-        btnMark.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view){
-                depart = tmpLoc;
-                cameraSet(depart,0);
-                setMark(marker1, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-            }
+        btnMark.setOnClickListener(view -> {
+            depart = tmpLoc;
+            cameraSet(depart,0);
+            setMark(marker1, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+            cardBar.setVisibility(View.INVISIBLE);
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
-        btnMark2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                arrival = tmpLoc;
-                cameraSet(arrival,0);
-                setMark(marker2, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-            }
+        btnMark2.setOnClickListener(view -> {
+            arrival = tmpLoc;
+            cameraSet(arrival,0);
+            setMark(marker2, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+            cardBar.setVisibility(View.INVISIBLE);
+
         });
         Button WaypBtn = (Button) findViewById(R.id.btnWay);
-        WaypBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    if(tmpLoc != null) {
-                        if (1 > wayPoints.size()) {setMark(wayP1, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                        else if (2 > wayPoints.size()) {setMark(wayP2, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                        else if (3 > wayPoints.size()) {setMark(wayP3, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                        else if (4 > wayPoints.size()) {setMark(wayP4, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                        else if (5 > wayPoints.size()) {setMark(wayP5, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                        wayPoints.add(tmpLoc);
-                        cameraSet(tmpLoc,0);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+        WaypBtn.setOnClickListener(view -> {
+            try {
+                if(tmpLoc != null) {
+                    if (1 > wayPoints.size()) {setMark(wayP1, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
+                    else if (2 > wayPoints.size()) {setMark(wayP2, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
+                    else if (3 > wayPoints.size()) {setMark(wayP3, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
+                    else if (4 > wayPoints.size()) {setMark(wayP4, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
+                    else if (5 > wayPoints.size()) {setMark(wayP5, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
+                    wayPoints.add(tmpLoc);
+                    cameraSet(tmpLoc,0);
+                    cardBar.setVisibility(View.INVISIBLE);
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
 
         Button lootBtn = (Button) findViewById(R.id.lootGen);
-        lootBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        lootBtn.setOnClickListener(view -> {
+            try {
                 cardBar.setVisibility(View.INVISIBLE);
                 if (depart == null) {
                     depX = locationSource.getLastLocation().getLatitude();
                     depY = locationSource.getLastLocation().getLongitude();
-                }else {
+                } else {
                     depX = depart.latitude;
                     depY = depart.longitude;
-                } if (arrival != null) {
+                }
+                if (arrival != null) {
                     arvX = arrival.latitude;
                     arvY = arrival.longitude;
                 }
                 new Thread(() -> {
-                    requestDirect(0,depY+","+depX, arvY +","+ arvX,wayLatlng);
-                    requestDirect(1,depY+","+depX, arvY +","+ arvX,wayLatlng);
-//                    depart = null; arrival = null;
-//                    wayPoints = null; tmpLoc = null;
+                    requestDirect(0, depY + "," + depX, arvY + "," + arvX);
+                    requestDirect(1, depY + "," + depX, arvY + "," + arvX);
                 }).start();
-                drawPath(loot);
+                if (loot != null) {
+                    drawPath(loot);
+                    cardBar2.setVisibility(View.VISIBLE);
+                    searchBar.setVisibility(View.INVISIBLE);
+                }
+            } catch (Exception e) {e.printStackTrace();}
 //                if(arrival != null && depX > 0) cameraSet(new LatLng((depX+ arvX/2),(depY+ arvY)/2),2);
-            }
         });
+
 
         // + 버튼 클릭시 북마크 페이지 전환
         Button pageTrans = (Button) findViewById(R.id.btn1);
-        pageTrans.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), UserActivity.class);
-                startActivity(intent);
-            }
+        pageTrans.setOnClickListener(view -> {
+            Intent intent = new Intent(getApplicationContext(), UserActivity.class);
+            startActivity(intent);
         });
 
         Button mapClear = (Button) findViewById(R.id.btnClear);
-        mapClear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                finish();
-                startActivity(intent);
-            }
+        mapClear.setOnClickListener(view -> {
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            finish();
+            startActivity(intent);
         });
     }
 
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
-        this.naverMap = naverMap;
+        MainActivity.naverMap = naverMap;
 
         naverMap.setLocationSource(locationSource);
         naverMap.getUiSettings().setLocationButtonEnabled(true);
@@ -196,14 +183,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setMapType(NaverMap.MapType.Navi);
 
         //건물 표시
-        naverMap.setLayerGroupEnabled(naverMap.LAYER_GROUP_BUILDING, true);
+        naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
     }
 
     private void requestGeocode() {
         try {
-            TextView tmptxt;
-            tmptxt = findViewById(R.id.textView2);
-
             EditText searchBar;
             searchBar = findViewById(R.id.editTextSearch);
 
@@ -231,9 +215,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 }
 
-                String line = null;
+                String line;
                 while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line + "\n");
+                    stringBuilder.append(line).append("\n");
                 }
 
                 int indexFirst;
@@ -247,8 +231,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 indexLast = stringBuilder.indexOf("\",\"distance\":");
                 String y = stringBuilder.substring(indexFirst + 5, indexLast);
 
-                tmptxt.setText("X: " + x + ", " + "Y: " + y);
-
                 tmpLoc = new LatLng(Double.parseDouble(y),Double.parseDouble(x));
                 bufferedReader.close();
                 conn.disconnect();
@@ -258,22 +240,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public int requestDirect(int div, String Depart, String Arrival, LatLng wayPoint) {
+    @SuppressLint("SetTextI18n")
+    public void requestDirect(int div, String Depart, String Arrival) {
         try {
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
-            String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+Depart+"&goal="+Arrival;
-            query = query + "&" + option[0];
+            StringBuilder query = new StringBuilder("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start=" + Depart + "&goal=" + Arrival);
+            query.append("&").append(option[0]);
             if(wayPoints != null) {
-                query = query + "&waypoints=";
+                query.append("&waypoints=");
                 for(int i = 0;wayPoints.size()>i;i++) {
                     String wayP = wayPoints.get(i).longitude + "," + wayPoints.get(i).latitude;
-                    query += wayP+"|";
+                    query.append(wayP).append("|");
                 }
             }
-            URL url = new URL(query);
+            URL url = new URL(query.toString());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
                 conn.setConnectTimeout(5000);
@@ -285,9 +268,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-                String line = null;
+                String line;
                 while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line + "\n");
+                    stringBuilder.append(line).append("\n");
                 }
 
                 int indexFirst,indexLast;
@@ -302,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     String[] coord = (stringBuilder.substring(indexFirst + 8,indexLast-1)).split(",");
 
                     indexFirst = stringBuilder.indexOf("\"guide");
-                    String section = new String(stringBuilder.substring(indexLast+9,indexFirst));
+                    String section = stringBuilder.substring(indexLast + 9, indexFirst);
                     ArrayList<Integer> tmpArr = new ArrayList<>();
                     Matcher matcher = Pattern.compile("pointIndex").matcher(section);
                     while (matcher.find()) { tmpArr.add(matcher.start()); }
@@ -324,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 tmpArr.get(0)+17).replaceAll("[^0-9]","")));
                         tmpArr.remove(0);}
                     for(int i = 0; coord.length > i; i+=2) {
-                        Double x,y;
+                        double x,y;
                         y = Double.parseDouble((coord[i].replace("[","")));
                         x = Double.parseDouble((coord[i+1].replace("]","")));
                         Loot.add(new LatLng(x,y));
@@ -364,25 +347,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             e.printStackTrace();
                         }
                     }
-                    if (Loot.size() > 1) {
-                        multiPath.add(Loot);
-                        Congestion.add(congestion.get(0));
-                    } else {
+                    if (Loot.size() <= 1) {
                         Loot.add(Loot.get(0));
-                        multiPath.add(Loot);
-                        Congestion.add(congestion.get(0));
                     }
+                    multiPath.add(Loot);
+                    Congestion.add(congestion.get(0));
 
                     loot = multiPath;
-                    return div;
                 } else if (div == 1) {
                     indexFirst = stringBuilder.indexOf("\"goal\":");
                     indexLast = stringBuilder.indexOf("\"etaService");
 
                     String[] indexing = stringBuilder.substring(indexFirst+11,indexLast-1).split(",");
                     long arrivalTime = Long.parseLong(indexing[indexing.length-1].replaceAll("[^0-9]",""))/1000;
-//인덱싱 재구성
-                    TextView tmptxt =  findViewById(R.id.textTime);
+
+                    TextView runtime = findViewById(R.id.runningTime);
 
                     long hour;
                     long minute = Math.round(arrivalTime/60);
@@ -390,16 +369,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if(minute >= 60) {
                         hour = Math.round(minute/60);
                         minute = Math.round(minute%60);
-                        tmptxt.setText("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
-                    } else { tmptxt.setText("예상 소요 시간 : "+minute+"분 "+second+"초"); }
+                        runtime.setText("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
+                    } else {runtime.setText("예상 소요 시간 : "+minute+"분 "+second+"초");}
 
-                    return Integer.parseInt(String.valueOf(arrivalTime));
+                    Integer.parseInt(String.valueOf(arrivalTime));
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return div;
     }
 
 
@@ -442,7 +420,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             path.setOutlineWidth(5);
             path.setColorParts(colorParts);
             path.setMap(naverMap);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
