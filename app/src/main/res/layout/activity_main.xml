@@ -6,11 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
 
 
         <!-- 네이버 지도 -->
@@ -26,7 +28,7 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginStart="340dp"
-                android:layout_marginTop="667dp"
+                android:layout_marginTop="750dp"
                 android:layout_marginEnd="21dp"
                 android:layout_marginBottom="10dp"
                 app:icon="@android:drawable/ic_input_add"
@@ -38,11 +40,10 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginStart="290dp"
-                android:layout_marginTop="667dp"
+                android:layout_marginTop="750dp"
                 android:layout_marginEnd="21dp"
                 android:layout_marginBottom="10dp"
-                app:icon="@android:drawable/ic_delete"
-                tools:ignore="UnknownId" />
+                app:icon="@android:drawable/ic_delete" />
 
             <TextView
                 android:id="@+id/textView2"
@@ -60,9 +61,9 @@
                 android:ems="10"
                 android:hint="search"
                 android:inputType="text"
-                android:padding="10dp"
+                android:cursorVisible="false"
+                android:padding="15dp"
                 app:layout_constraintTop_toTopOf="parent" />
-
 
             <Button
                 android:id="@+id/lootGen"
@@ -118,6 +119,7 @@
 
 
     </LinearLayout>
+
 
 
     <!--    <androidx.fragment.app.FragmentContainerView-->
