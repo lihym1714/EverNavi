@@ -23,16 +23,14 @@
 
 
             <Button
-                android:id="@+id/btn1"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:id="@+id/lootGen"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginStart="340dp"
                 android:layout_marginTop="750dp"
                 android:layout_marginEnd="21dp"
                 android:layout_marginBottom="10dp"
-                app:icon="@android:drawable/ic_input_add"
-                tools:ignore="UnknownId" />
+                android:background="@drawable/button_drawable3" />
 
 
             <EditText
@@ -50,11 +48,11 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <Button
-                android:id="@+id/lootGen"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="300dp"
-                android:text="lootGen"
+                android:id="@+id/btn1"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="5dp"
+                android:text=""
                 android:layout_marginTop="65dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -105,6 +103,8 @@
         android:background="@drawable/card_view_drawable2"
         app:layout_constraintStart_toStartOf="parent"
         android:visibility="invisible"
+        android:elevation="20dp"
+        android:outlineAmbientShadowColor="#FFC107"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
@@ -120,6 +120,8 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/edittext_drawable2"
+                android:elevation="10dp"
+                android:text="현재 위치"
                 android:textSize="20dp"
                 android:textColor="@color/white"/>
             <TextView
@@ -131,6 +133,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/edittext_drawable2"
                 android:textSize="20dp"
+                android:elevation="10dp"
                 android:textColor="@color/white"/>
             <TextView
                 android:paddingVertical="5dp"
@@ -139,6 +142,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_marginTop="10dp"
+                android:elevation="10dp"
                 android:background="@drawable/edittext_drawable2"
                 android:textColor="@color/white"
                 android:textSize="20dp" />
@@ -156,6 +160,14 @@
                 android:layout_height="50dp"
                 android:background="@drawable/button_drawable2"
                 app:icon="@android:drawable/ic_delete" />
+            <Button
+                android:id="@+id/btnSave"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_marginTop="50dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/button_drawable2"
+                app:icon="@android:drawable/ic_menu_save" />
         </LinearLayout>
     </LinearLayout>
 

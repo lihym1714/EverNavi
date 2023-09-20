@@ -8,6 +8,8 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -42,8 +44,9 @@ import java.util.regex.Pattern;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static NaverMap naverMap;
-    private final Marker marker1 = new Marker();
-    private final Marker marker2 = new Marker();
+    private final Marker marker = new Marker();
+    private final Marker markerDep = new Marker();
+    private final Marker markerArv = new Marker();
     private final Marker wayP1 = new Marker();
     private final Marker wayP2 = new Marker();
     private final Marker wayP3 = new Marker();
@@ -57,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final ArrayList<LatLng> wayPoints = new ArrayList<>();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
+
+    private  static Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,40 +79,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         cardBar2.setVisibility(View.INVISIBLE);
 
         EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
-        searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        searchBar.setOnEditorActionListener((v, actionId, event) -> {
-            if(actionId == EditorInfo.IME_ACTION_DONE) {
-                InputMethodManager imm;
-                imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-
-                new Thread(() -> {
-                    requestGeocode();
-                    if(tmpLoc != null) {cameraSet(tmpLoc,0);}
-                    searchBar.setText("");
-                }).start();
-
-                cardBar.setVisibility(View.VISIBLE);
-                return true;
-            }
-            return false;
-        });
+        try {
+            searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
+            searchBar.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    final Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            InputMethodManager imm;
+                            imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                            imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+                            setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
+                            cardBar.setVisibility(View.VISIBLE);
+                        }
+                    };
+                    new Thread(() -> {
+                        requestGeocode();
+                        if (tmpLoc != null) {
+                            cameraSet(tmpLoc, 0);
+                        }
+                        mHandler.post(runnable);
+                    }).start();
+                }
+                return false;
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // 마크 버튼 클릭시 지정된 좌표에 마크 표시
         Button btnMark = (Button) findViewById(R.id.btnmark1);
         btnMark.setOnClickListener(view -> {
+            TextView depAddr = (TextView)findViewById(R.id.departureAddr);
             depart = tmpLoc;
-            cameraSet(depart,0);
-            setMark(marker1, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+            setMark(markerDep, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
             cardBar.setVisibility(View.INVISIBLE);
+            depAddr.setText(searchBar.getText().toString());
+            searchBar.setText("");
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
         btnMark2.setOnClickListener(view -> {
+            TextView arvAddr = (TextView)findViewById(R.id.arrivalAddr);
             arrival = tmpLoc;
-            cameraSet(arrival,0);
-            setMark(marker2, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+            setMark(markerArv, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
             cardBar.setVisibility(View.INVISIBLE);
-
+            arvAddr.setText(searchBar.getText().toString());
+            searchBar.setText("");
         });
         Button WaypBtn = (Button) findViewById(R.id.btnWay);
         WaypBtn.setOnClickListener(view -> {
@@ -129,32 +146,42 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Button lootBtn = (Button) findViewById(R.id.lootGen);
         lootBtn.setOnClickListener(view -> {
-            try {
-                cardBar.setVisibility(View.INVISIBLE);
-                if (depart == null) {
-                    depX = locationSource.getLastLocation().getLatitude();
-                    depY = locationSource.getLastLocation().getLongitude();
-                } else {
-                    depX = depart.latitude;
-                    depY = depart.longitude;
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    cardBar.setVisibility(View.INVISIBLE);
+                    if (loot != null) {
+                        cardBar2.setVisibility(View.VISIBLE);
+                        searchBar.setVisibility(View.INVISIBLE);
+                        drawPath(loot);
+                    }
                 }
-                if (arrival != null) {
-                    arvX = arrival.latitude;
-                    arvY = arrival.longitude;
+            };
+            class NewRunnable implements Runnable {
+                @Override
+                public void run() {
+                    try {
+                        if (depart == null) {
+                            depX = locationSource.getLastLocation().getLatitude();
+                            depY = locationSource.getLastLocation().getLongitude();
+                        } else {
+                            depX = depart.latitude;
+                            depY = depart.longitude;
+                        }
+                        arvX = arrival.latitude;
+                        arvY = arrival.longitude;
+                        requestDirect(0, depY + "," + depX, arvY + "," + arvX);
+                        requestDirect(1, depY + "," + depX, arvY + "," + arvX);
+                        LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
+                        mHandler.post(runnable);
+                        cameraSet(avgLoc,2);
+                        lootBtn.setVisibility(View.INVISIBLE);
+                    } catch (Exception e) {e.printStackTrace();}
                 }
-                new Thread(() -> {
-                    requestDirect(0, depY + "," + depX, arvY + "," + arvX);
-                    requestDirect(1, depY + "," + depX, arvY + "," + arvX);
-                }).start();
-                if (loot != null) {
-                    drawPath(loot);
-                    cardBar2.setVisibility(View.VISIBLE);
-                    searchBar.setVisibility(View.INVISIBLE);
-                }
-            } catch (Exception e) {e.printStackTrace();}
-//                if(arrival != null && depX > 0) cameraSet(new LatLng((depX+ arvX/2),(depY+ arvY)/2),2);
+            }
+            Thread thread = new Thread(new NewRunnable());
+            thread.start();
         });
-
 
         // + 버튼 클릭시 북마크 페이지 전환
         Button pageTrans = (Button) findViewById(R.id.btn1);
