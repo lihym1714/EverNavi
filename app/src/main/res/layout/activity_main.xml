@@ -22,17 +22,6 @@
             android:layout_height="match_parent">
 
 
-            <Button
-                android:id="@+id/lootGen"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="340dp"
-                android:layout_marginTop="750dp"
-                android:layout_marginEnd="21dp"
-                android:layout_marginBottom="10dp"
-                android:background="@drawable/button_drawable3" />
-
-
             <EditText
                 android:id="@+id/editTextSearch"
                 android:layout_width="match_parent"
@@ -47,14 +36,16 @@
                 android:visibility="visible"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <Button
+            <android.widget.Button
                 android:id="@+id/btn1"
                 android:layout_width="50dp"
+                android:textColor="@color/white"
                 android:layout_height="50dp"
                 android:layout_marginStart="5dp"
-                android:text=""
                 android:layout_marginTop="65dp"
+                android:background="@drawable/button_drawable3"
                 app:layout_constraintStart_toStartOf="parent"
+                android:text="더보기"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <LinearLayout
@@ -67,26 +58,41 @@
                 android:orientation="horizontal"
                 android:visibility="invisible">
 
-                <Button
+                <android.widget.Button
                     android:id="@+id/btnmark1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="start" />
+                    android:layout_width="90dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/button_drawable3"
+                    android:textColor="@color/white"
+                    android:text="출발" />
 
-                <Button
+                <android.widget.Button
                     android:id="@+id/btnWay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="20dp"
-                    android:text="wayP"
+                    android:layout_width="90dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/button_drawable3"
+                    android:layout_margin="15dp"
+                    android:textColor="@color/white"
+                    android:text="경유"
                     app:layout_constraintEnd_toStartOf="@+id/btnmark2" />
 
-                <Button
+                <android.widget.Button
                     android:id="@+id/btnmark2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="end"
+                    android:layout_width="90dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/button_drawable3"
+                    android:textColor="@color/white"
+                    android:text="도착"
                     app:layout_constraintEnd_toStartOf="@+id/btnmark1" />
+
+                <android.widget.Button
+                    android:id="@+id/lootGen"
+                    android:textColor="@color/white"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:text="경로\n생성"
+                    android:layout_marginStart="15dp"
+                    android:background="@drawable/button_drawable1" />
             </LinearLayout>
 
 
@@ -106,9 +112,21 @@
         android:elevation="20dp"
         android:outlineAmbientShadowColor="#FFC107"
         app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <View
+                android:id="@+id/view"
+                android:layout_width="50dp"
+                android:layout_marginTop="25dp"
+                android:layout_marginBottom="70dp"
+                android:background="@drawable/drawable_arowpoint"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
 
         <LinearLayout
-            android:layout_width="356dp"
+            android:layout_width="298dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_marginStart="5dp">
@@ -118,8 +136,8 @@
                 android:id="@+id/departureAddr"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/edittext_drawable2"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/text_view_drawable_top"
                 android:elevation="10dp"
                 android:text="현재 위치"
                 android:textSize="20dp"
@@ -130,8 +148,8 @@
                 android:id="@+id/arrivalAddr"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/edittext_drawable2"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/text_view_drawable_bottom"
                 android:textSize="20dp"
                 android:elevation="10dp"
                 android:textColor="@color/white"/>
@@ -158,12 +176,13 @@
                 style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/button_drawable2"
                 app:icon="@android:drawable/ic_delete" />
             <Button
                 android:id="@+id/btnSave"
                 style="@style/Widget.Material3.Button.IconButton.Filled"
-                android:layout_marginTop="50dp"
+                android:layout_marginTop="20dp"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:background="@drawable/button_drawable2"

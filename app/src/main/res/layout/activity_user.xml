@@ -6,6 +6,8 @@
     android:layout_height="match_parent"
     tools:context=".UserActivity">
 
+
+
     <Button
         android:id="@+id/btnMap"
         style="@style/Widget.Material3.Button.IconButton.Filled"
@@ -38,24 +40,20 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ExtraText" />
 
-    <LinearLayout
+    <ScrollView
+        android:id="@+id/scrollLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <Button
-            android:id="@+id/button"
-
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/button_drawable1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 
-            android:text="1번 경로"
-            android:textColor="#000000"
-            android:textSize="30sp" />
-    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

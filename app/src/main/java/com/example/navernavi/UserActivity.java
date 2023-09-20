@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ScrollView;
+import android.widget.Scroller;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -24,17 +26,6 @@ public class UserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
 
-        Button bookMark = (Button) findViewById(R.id.button);
-        bookMark.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Thread(() -> {
-                    requestDirect("126.9566545,37.5523347","126.9572262,37.5470212");
-                }).start();
-                bookMark.setText(arvTime+"");
-            }
-        });
-
         // 맵 버튼
         Button pageTransBtn = (Button) findViewById(R.id.btnMap);
         pageTransBtn.setOnClickListener(new View.OnClickListener() {
@@ -50,7 +41,9 @@ public class UserActivity extends AppCompatActivity {
         returnBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                ScrollView scrollView = (ScrollView) findViewById(R.id.scrollLayout);
+                Button test = new Button(UserActivity.this);
+                scrollView.addView(test);
             }
         });
     }

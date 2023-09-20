@@ -5,6 +5,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -82,24 +83,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
             searchBar.setOnEditorActionListener((v, actionId, event) -> {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    final Runnable runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            InputMethodManager imm;
-                            imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                            imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-                            setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-                            cardBar.setVisibility(View.VISIBLE);
-                        }
-                    };
-                    new Thread(() -> {
-                        requestGeocode();
-                        if (tmpLoc != null) {
-                            cameraSet(tmpLoc, 0);
-                        }
-                        mHandler.post(runnable);
-                    }).start();
+                if(searchBar.length() > 0) {
+                    if (actionId == EditorInfo.IME_ACTION_DONE) {
+                        final Runnable runnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                InputMethodManager imm;
+                                imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                                imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+                                setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
+                                cardBar.setVisibility(View.VISIBLE);
+                            }
+                        };
+                          new Thread(() -> {
+                            requestGeocode();
+                            if (tmpLoc != null) {
+                                cameraSet(tmpLoc, 0);
+                                mHandler.post(runnable);
+                            }
+                        }).start();
+                    } else {
+                        showDialog("Warning","주소지를 입력해주세요.");
+                    }
                 }
                 return false;
             });
@@ -113,7 +118,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             TextView depAddr = (TextView)findViewById(R.id.departureAddr);
             depart = tmpLoc;
             setMark(markerDep, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-            cardBar.setVisibility(View.INVISIBLE);
             depAddr.setText(searchBar.getText().toString());
             searchBar.setText("");
         });
@@ -122,7 +126,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             TextView arvAddr = (TextView)findViewById(R.id.arrivalAddr);
             arrival = tmpLoc;
             setMark(markerArv, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-            cardBar.setVisibility(View.INVISIBLE);
             arvAddr.setText(searchBar.getText().toString());
             searchBar.setText("");
         });
@@ -137,7 +140,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     else if (5 > wayPoints.size()) {setMark(wayP5, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
                     wayPoints.add(tmpLoc);
                     cameraSet(tmpLoc,0);
-                    cardBar.setVisibility(View.INVISIBLE);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -175,7 +177,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
                         mHandler.post(runnable);
                         cameraSet(avgLoc,2);
-                        lootBtn.setVisibility(View.INVISIBLE);
                     } catch (Exception e) {e.printStackTrace();}
                 }
             }
@@ -196,6 +197,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
             startActivity(intent);
         });
+
+        Button saveBtn = (Button) findViewById(R.id.btnSave);
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
+                ad.setTitle("경로 저장");
+                ad.setMessage("저장할 경로의 이름을 지정해주세요");
+
+                final EditText et = new EditText(MainActivity.this);
+                et.setSingleLine();
+                ad.setView(et);
+                ad.setPositiveButton("저장", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                ad.show();
+            }
+        });
     }
 
 
@@ -204,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MainActivity.naverMap = naverMap;
 
         naverMap.setLocationSource(locationSource);
+        naverMap.getUiSettings().setZoomControlEnabled(false);
         naverMap.getUiSettings().setLocationButtonEnabled(true);
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
         //배경 지도 선택
@@ -217,8 +246,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             EditText searchBar;
             searchBar = findViewById(R.id.editTextSearch);
-
-            if(1>searchBar.length()) {showDialog("Warning","주소지를 입력해주세요.");}
 
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
@@ -238,29 +265,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 if (responseCode == 200) { //200 = OK , 400 = INVALID_REQUEST , 500 = SYSTEM ERROR
                     bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                } else {
-                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+
+                    int indexFirst;
+                    int indexLast;
+
+                    indexFirst = stringBuilder.indexOf("\"x\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"y\":");
+                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    indexFirst = stringBuilder.indexOf("\"y\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"distance\":");
+                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    tmpLoc = new LatLng(Double.parseDouble(y), Double.parseDouble(x));
+                    bufferedReader.close();
+                    conn.disconnect();
                 }
-
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
-
-                int indexFirst;
-                int indexLast;
-
-                indexFirst = stringBuilder.indexOf("\"x\":\"");
-                indexLast = stringBuilder.indexOf("\",\"y\":");
-                String x = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                indexFirst = stringBuilder.indexOf("\"y\":\"");
-                indexLast = stringBuilder.indexOf("\",\"distance\":");
-                String y = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                tmpLoc = new LatLng(Double.parseDouble(y),Double.parseDouble(x));
-                bufferedReader.close();
-                conn.disconnect();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -293,113 +319,128 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
                 conn.setDoInput(true);
 
-                bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
 
-                int indexFirst,indexLast;
-                if(div == 0) { //0 = 루트 생성 , 1 = 트래픽 검색
-                    ArrayList<LatLng> Loot = new ArrayList<>();
-                    ArrayList<Integer> pointIndex = new ArrayList<>();
-                    ArrayList<Integer> pointCount = new ArrayList<>();
-                    ArrayList<Integer> congestion = new ArrayList<>();
-
-                    indexFirst = stringBuilder.indexOf("\"path\":");
-                    indexLast = stringBuilder.indexOf(",\"section\"");
-                    String[] coord = (stringBuilder.substring(indexFirst + 8,indexLast-1)).split(",");
-
-                    indexFirst = stringBuilder.indexOf("\"guide");
-                    String section = stringBuilder.substring(indexLast + 9, indexFirst);
-                    ArrayList<Integer> tmpArr = new ArrayList<>();
-                    Matcher matcher = Pattern.compile("pointIndex").matcher(section);
-                    while (matcher.find()) { tmpArr.add(matcher.start()); }
-                    while(!tmpArr.isEmpty()) {
-                        pointIndex.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
-                                tmpArr.get(0)+17).replaceAll("[^0-9]","")));
-                        tmpArr.remove(0);}
-
-                    matcher = Pattern.compile("pointCount").matcher(section);
-                    while (matcher.find()) { tmpArr.add(matcher.start()); }
-                    while(!tmpArr.isEmpty()) {
-                        pointCount.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
-                                tmpArr.get(0)+17).replaceAll("[^0-9]","")));
-                        tmpArr.remove(0);}
-                    matcher = Pattern.compile("congestion").matcher(section);
-                    while (matcher.find()) { tmpArr.add(matcher.start()); }
-                    while(!tmpArr.isEmpty()) {
-                        congestion.add(Integer.parseInt(section.substring(tmpArr.get(0)+12,
-                                tmpArr.get(0)+17).replaceAll("[^0-9]","")));
-                        tmpArr.remove(0);}
-                    for(int i = 0; coord.length > i; i+=2) {
-                        double x,y;
-                        y = Double.parseDouble((coord[i].replace("[","")));
-                        x = Double.parseDouble((coord[i+1].replace("]","")));
-                        Loot.add(new LatLng(x,y));
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
                     }
 
-                    ArrayList<List<LatLng>> multiPath = new ArrayList<>();
-                    ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
+                    int indexFirst, indexLast;
+                    if (div == 0) { //0 = 루트 생성 , 1 = 트래픽 검색
+                        ArrayList<LatLng> Loot = new ArrayList<>();
+                        ArrayList<Integer> pointIndex = new ArrayList<>();
+                        ArrayList<Integer> pointCount = new ArrayList<>();
+                        ArrayList<Integer> congestion = new ArrayList<>();
 
-                    int cnt=0;
-                    while(!pointIndex.isEmpty()) {
-                        try {
-                            if(pointIndex.get(0)+pointCount.get(0) == cnt) {
-                                tmpPath.add(Loot.get(0));
-                                multiPath.add((List<LatLng>) tmpPath.clone());
-                                tmpPath.clear();
-                                pointCount.remove(0);
-                                pointIndex.remove(0);
-                                Congestion.add(congestion.get(0));
-                                if(congestion.size() > 1) congestion.remove(0);
-                            } else if (pointIndex.get(0) == cnt) {
-                                tmpPath.add(Loot.get(0));
-                                multiPath.add((List<LatLng>) tmpPath.clone());
-                                tmpPath.clear();
-                                Congestion.add(congestion.get(0));
-//                                congestion.remove(0);
-                            }
-                            if (pointIndex.get(0)+pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
-                                tmpPath.add(Loot.get(0));
-                                Loot.remove(0);
-                                cnt++;
-                            } else if(pointIndex.get(0)+pointCount.get(0) > cnt) {
-                                tmpPath.add(Loot.get(0));
-                                Loot.remove(0);
-                                cnt++;
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        indexFirst = stringBuilder.indexOf("\"path\":");
+                        indexLast = stringBuilder.indexOf(",\"section\"");
+                        String[] coord = (stringBuilder.substring(indexFirst + 8, indexLast - 1)).split(",");
+
+                        indexFirst = stringBuilder.indexOf("\"guide");
+                        String section = stringBuilder.substring(indexLast + 9, indexFirst);
+                        ArrayList<Integer> tmpArr = new ArrayList<>();
+                        Matcher matcher = Pattern.compile("pointIndex").matcher(section);
+                        while (matcher.find()) {
+                            tmpArr.add(matcher.start());
                         }
+                        while (!tmpArr.isEmpty()) {
+                            pointIndex.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
+                                    tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
+                            tmpArr.remove(0);
+                        }
+
+                        matcher = Pattern.compile("pointCount").matcher(section);
+                        while (matcher.find()) {
+                            tmpArr.add(matcher.start());
+                        }
+                        while (!tmpArr.isEmpty()) {
+                            pointCount.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
+                                    tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
+                            tmpArr.remove(0);
+                        }
+                        matcher = Pattern.compile("congestion").matcher(section);
+                        while (matcher.find()) {
+                            tmpArr.add(matcher.start());
+                        }
+                        while (!tmpArr.isEmpty()) {
+                            congestion.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
+                                    tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
+                            tmpArr.remove(0);
+                        }
+                        for (int i = 0; coord.length > i; i += 2) {
+                            double x, y;
+                            y = Double.parseDouble((coord[i].replace("[", "")));
+                            x = Double.parseDouble((coord[i + 1].replace("]", "")));
+                            Loot.add(new LatLng(x, y));
+                        }
+
+                        ArrayList<List<LatLng>> multiPath = new ArrayList<>();
+                        ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
+
+                        int cnt = 0;
+                        while (!pointIndex.isEmpty()) {
+                            try {
+                                if (pointIndex.get(0) + pointCount.get(0) == cnt) {
+                                    tmpPath.add(Loot.get(0));
+                                    multiPath.add((List<LatLng>) tmpPath.clone());
+                                    tmpPath.clear();
+                                    pointCount.remove(0);
+                                    pointIndex.remove(0);
+                                    Congestion.add(congestion.get(0));
+                                    if (congestion.size() > 1) congestion.remove(0);
+                                } else if (pointIndex.get(0) == cnt) {
+                                    tmpPath.add(Loot.get(0));
+                                    multiPath.add((List<LatLng>) tmpPath.clone());
+                                    tmpPath.clear();
+                                    Congestion.add(congestion.get(0));
+//                                congestion.remove(0);
+                                }
+                                if (pointIndex.get(0) + pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
+                                    tmpPath.add(Loot.get(0));
+                                    Loot.remove(0);
+                                    cnt++;
+                                } else if (pointIndex.get(0) + pointCount.get(0) > cnt) {
+                                    tmpPath.add(Loot.get(0));
+                                    Loot.remove(0);
+                                    cnt++;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (Loot.size() <= 1) {
+                            Loot.add(Loot.get(0));
+                        }
+                        multiPath.add(Loot);
+                        Congestion.add(congestion.get(0));
+
+                        loot = multiPath;
+                    } else if (div == 1) {
+                        indexFirst = stringBuilder.indexOf("\"goal\":");
+                        indexLast = stringBuilder.indexOf("\"etaService");
+
+                        String[] indexing = stringBuilder.substring(indexFirst + 11, indexLast - 1).split(",");
+                        long arrivalTime = Long.parseLong(indexing[indexing.length - 1].replaceAll("[^0-9]", "")) / 1000;
+
+                        TextView runtime = findViewById(R.id.runningTime);
+
+                        long hour;
+                        long minute = Math.round(arrivalTime / 60);
+                        long second = Math.round(arrivalTime % 60);
+                        if (minute >= 60) {
+                            hour = Math.round(minute / 60);
+                            minute = Math.round(minute % 60);
+                            runtime.setText("예상 소요 시간 : " + hour + "시간 " + minute + "분 " + second + "초");
+                        } else {
+                            runtime.setText("예상 소요 시간 : " + minute + "분 " + second + "초");
+                        }
+
+                        Integer.parseInt(String.valueOf(arrivalTime));
                     }
-                    if (Loot.size() <= 1) {
-                        Loot.add(Loot.get(0));
-                    }
-                    multiPath.add(Loot);
-                    Congestion.add(congestion.get(0));
-
-                    loot = multiPath;
-                } else if (div == 1) {
-                    indexFirst = stringBuilder.indexOf("\"goal\":");
-                    indexLast = stringBuilder.indexOf("\"etaService");
-
-                    String[] indexing = stringBuilder.substring(indexFirst+11,indexLast-1).split(",");
-                    long arrivalTime = Long.parseLong(indexing[indexing.length-1].replaceAll("[^0-9]",""))/1000;
-
-                    TextView runtime = findViewById(R.id.runningTime);
-
-                    long hour;
-                    long minute = Math.round(arrivalTime/60);
-                    long second = Math.round(arrivalTime%60);
-                    if(minute >= 60) {
-                        hour = Math.round(minute/60);
-                        minute = Math.round(minute%60);
-                        runtime.setText("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
-                    } else {runtime.setText("예상 소요 시간 : "+minute+"분 "+second+"초");}
-
-                    Integer.parseInt(String.valueOf(arrivalTime));
                 }
             }
         } catch (Exception e) {
@@ -475,11 +516,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void showDialog(String title,String msg) {
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this)
-                .setTitle(title)
-                .setMessage(msg);
-        AlertDialog msgDlg =  alertBuilder.create();
-        msgDlg.show();
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
+        alertBuilder.setTitle(title);
+        alertBuilder.setMessage(msg);
+        alertBuilder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        alertBuilder.show();
     }
 }
 
