@@ -2,13 +2,14 @@ package com.example.navernavi;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.Scroller;
+import android.widget.TextView;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -27,6 +28,33 @@ public class UserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
+        //SharedPreferences To Print
+
+        SharedPreferences sharedPreferences = getSharedPreferences("bookmark",MODE_PRIVATE);
+        int key = sharedPreferences.getAll().size();
+
+        if(key > 0) {
+            try {
+                for(int i = 0;key>i;i++) {
+                    String input = sharedPreferences.getString(i+"","");
+                    String[] data = input.split(":");
+                    UserSub n_layout = new UserSub(getApplicationContext());
+                    LinearLayout con = (LinearLayout) findViewById(R.id.scrLayout);
+                    con.addView(n_layout);
+                    TextView name = (TextView)n_layout.findViewById(R.id.bmName);
+                    TextView dep = (TextView)n_layout.findViewById(R.id.bmDep);
+                    TextView arv = (TextView)n_layout.findViewById(R.id.bmArv);
+                    name.setText(data[0]);
+                    dep.setText(data[1]);
+                    arv.setText(data[2]);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            TextView isnull = (TextView) findViewById(R.id.isnull);
+            isnull.setVisibility(View.VISIBLE);
+        }
 
 
         // 북마크 추가 버튼
@@ -34,9 +62,10 @@ public class UserActivity extends AppCompatActivity {
         plusBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UserSub n_layout = new UserSub(getApplicationContext());
-                LinearLayout con = (LinearLayout) findViewById(R.id.scrLayout);
-                con.addView(n_layout);
+                SharedPreferences sharedPreferences = getSharedPreferences("bookmark",MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.clear();
+                editor.apply();
             }
         });
     }

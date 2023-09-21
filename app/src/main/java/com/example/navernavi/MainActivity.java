@@ -5,8 +5,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +20,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraUpdate;
@@ -37,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -213,8 +217,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 ad.setPositiveButton("저장", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if(et.getText() != null) {
+                        if(et.getText().length() > 0) {
+                            sharedPref(et.getText().toString());
                             dialog.dismiss();
+                            Toast.makeText(getApplicationContext(),"\""+ et.getText().toString()+"\" 경로가 저장되었습니다",Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(),"경로명을 입력해주세요",Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -400,7 +408,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     multiPath.add((List<LatLng>) tmpPath.clone());
                                     tmpPath.clear();
                                     Congestion.add(congestion.get(0));
-//                                congestion.remove(0);
                                 }
                                 if (pointIndex.get(0) + pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
                                     tmpPath.add(Loot.get(0));
@@ -530,6 +537,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         alertBuilder.show();
+    }
+
+    private void sharedPref(String name) {
+        StringBuilder data = new StringBuilder();
+        data.append(name).append(":");
+        data.append(depY+","+depX).append(":");
+        data.append(arvY+","+arvX).append(":");
+        for(int i = 0;wayPoints.size()>i;i++) {
+            data.append(wayPoints.get(i).longitude+","+wayPoints.get(i).latitude).append("|");
+        }
+        String save = data.toString();
+
+        SharedPreferences sharedPreferences = getSharedPreferences("bookmark", MODE_PRIVATE);
+
+        int key = sharedPreferences.getAll().size();
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(key+"",save);
+        editor.commit();
     }
 }
 

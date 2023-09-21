@@ -16,13 +16,30 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+
         <LinearLayout
             android:id="@+id/scrLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"></LinearLayout>
-    </ScrollView>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            tools:ignore="MissingConstraints">
+            <TextView
+                android:layout_gravity="center"
+                android:id="@+id/isnull"
+                android:gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="invisible"
+                android:textSize="10pt"
+                android:text="저장된 경로가 존재하지 않음"
+                android:textColor="@color/white"
+                tools:ignore="MissingConstraints" />
 
+        </LinearLayout>
+
+
+    </ScrollView>
 
 
     <android.widget.Button
