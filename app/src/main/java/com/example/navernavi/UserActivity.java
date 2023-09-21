@@ -6,8 +6,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Scroller;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -26,24 +28,15 @@ public class UserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
 
-        // 맵 버튼
-        Button pageTransBtn = (Button) findViewById(R.id.btnMap);
-        pageTransBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(),MainActivity.class);
-                startActivity(intent);
-            }
-        });
 
         // 북마크 추가 버튼
-        Button returnBtn = (Button) findViewById(R.id.btnPlus);
-        returnBtn.setOnClickListener(new View.OnClickListener() {
+        Button plusBtn = (Button) findViewById(R.id.btnPlus);
+        plusBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ScrollView scrollView = (ScrollView) findViewById(R.id.scrollLayout);
-                Button test = new Button(UserActivity.this);
-                scrollView.addView(test);
+                UserSub n_layout = new UserSub(getApplicationContext());
+                LinearLayout con = (LinearLayout) findViewById(R.id.scrLayout);
+                con.addView(n_layout);
             }
         });
     }

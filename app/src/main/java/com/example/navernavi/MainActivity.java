@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 InputMethodManager imm;
                                 imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                                 imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+                                searchBar.clearFocus();
                                 setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
                                 cardBar.setVisibility(View.VISIBLE);
                             }
@@ -204,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onClick(View v) {
                 AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
                 ad.setTitle("경로 저장");
-                ad.setMessage("저장할 경로의 이름을 지정해주세요");
+                ad.setMessage("저장할 경로의 이름을 입력해주세요");
 
                 final EditText et = new EditText(MainActivity.this);
                 et.setSingleLine();
@@ -212,7 +213,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 ad.setPositiveButton("저장", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
+                        if(et.getText() != null) {
+                            dialog.dismiss();
+                        }
                     }
                 });
                 ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -451,6 +454,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void cameraSet(LatLng loc,int zoom) {
         try {
+            naverMap.cancelTransitions();
             int zoomLevel = 13;
             if (zoom == 0) {zoomLevel = 17;}
             else if (zoom == 1) {zoomLevel = 13;}
