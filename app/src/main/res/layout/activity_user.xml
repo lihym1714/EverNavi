@@ -23,38 +23,53 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             tools:ignore="MissingConstraints">
+
             <TextView
-                android:layout_gravity="center"
                 android:id="@+id/isnull"
-                android:gravity="center"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="invisible"
-                android:textSize="10pt"
+                android:layout_gravity="center"
+                android:gravity="center"
                 android:text="저장된 경로가 존재하지 않음"
                 android:textColor="@color/white"
+                android:textSize="10pt"
+                android:visibility="invisible"
                 tools:ignore="MissingConstraints" />
         </LinearLayout>
 
 
     </ScrollView>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <android.widget.Button
-        android:id="@+id/btnPlus"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="310dp"
-        android:layout_marginTop="665dp"
-        android:layout_marginEnd="30dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/button_drawable4"
-        android:text="경로\n추가"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:textColor="@color/white" />
+
+
+        <android.widget.Button
+            android:layout_margin="25dp"
+            android:id="@+id/btnReload"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/button_drawable4"
+            android:text="새로\n고침"
+            android:textColor="@color/white" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+        <android.widget.Button
+            android:layout_margin="25dp"
+            android:id="@+id/btnPlus"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@drawable/button_drawable4"
+            android:text="경로\n추가"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private double depX, depY, arvX, arvY;
     private LatLng depart,arrival, tmpLoc;
+    private String intentText;
     private final ArrayList<LatLng> wayPoints = new ArrayList<>();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
@@ -83,6 +84,42 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
         cardBar2.setVisibility(View.INVISIBLE);
 
+        Intent userIntent = getIntent();
+        String text = userIntent.getStringExtra("key");
+        TextView depAddr = (TextView)findViewById(R.id.departureAddr);
+        TextView arvAddr = (TextView)findViewById(R.id.arrivalAddr);
+        depAddr.setText(text.split(":")[2]);
+        arvAddr.setText(text.split(":")[3]);
+        intentText = text;
+
+        if(text.split(":")[0].contains("saveLoot")) {
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (!markerDep.isAdded()) {
+                        depY = tmpLoc.longitude; depX = tmpLoc.latitude;
+                        depart = new LatLng(depX,depY);
+                        setMark(markerDep, new LatLng(depX, depY), com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+                    }
+                    else {
+                        arvY = tmpLoc.longitude; arvX = tmpLoc.latitude;
+                        setMark(markerArv, new LatLng(arvX, arvY), com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+                        cameraSet(new LatLng((depX+arvX)/2,(depY+arvY)/2),2);
+                    }
+                }
+            };
+            new Thread(() -> {
+                requestGeocode(text.split(":")[2]);
+                if (tmpLoc != null) {
+                    mHandler.post(runnable);
+                }
+                requestGeocode(text.split(":")[3]);
+                if (tmpLoc != null) {
+                    mHandler.post(runnable);
+                }
+            }).start();
+        }
+
         EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         try {
             searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -97,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
                                 searchBar.clearFocus();
                                 setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-                                cardBar.setVisibility(View.VISIBLE);
+//                                cardBar.setVisibility(View.VISIBLE);
                             }
                         };
                           new Thread(() -> {
@@ -108,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         }).start();
                     } else {
-                        showDialog("Warning","주소지를 입력해주세요.");
+                        Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
                     }
                 }
                 return false;
@@ -120,7 +157,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // 마크 버튼 클릭시 지정된 좌표에 마크 표시
         Button btnMark = (Button) findViewById(R.id.btnmark1);
         btnMark.setOnClickListener(view -> {
-            TextView depAddr = (TextView)findViewById(R.id.departureAddr);
             depart = tmpLoc;
             setMark(markerDep, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
             depAddr.setText(searchBar.getText().toString());
@@ -129,7 +165,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
         btnMark2.setOnClickListener(view -> {
-            TextView arvAddr = (TextView)findViewById(R.id.arrivalAddr);
             arrival = tmpLoc;
             setMark(markerArv, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
             arvAddr.setText(searchBar.getText().toString());
@@ -177,8 +212,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             depX = depart.latitude;
                             depY = depart.longitude;
                         }
-                        arvX = arrival.latitude;
-                        arvY = arrival.longitude;
+//                        arvX = arrival.latitude;
+//                        arvY = arrival.longitude;
                         requestDirect(0, depY + "," + depX, arvY + "," + arvX);
                         requestDirect(1, depY + "," + depX, arvY + "," + arvX);
                         LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
@@ -189,13 +224,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             Thread thread = new Thread(new NewRunnable());
             thread.start();
-        });
-
-        // + 버튼 클릭시 북마크 페이지 전환
-        Button pageTrans = (Button) findViewById(R.id.btn1);
-        pageTrans.setOnClickListener(view -> {
-            Intent intent = new Intent(getApplicationContext(), UserActivity.class);
-            startActivity(intent);
         });
 
         Button mapClear = (Button) findViewById(R.id.btnClear);
@@ -247,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setLocationSource(locationSource);
         naverMap.getUiSettings().setZoomControlEnabled(false);
         naverMap.getUiSettings().setLocationButtonEnabled(true);
-        naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
+        naverMap.setLocationTrackingMode(LocationTrackingMode.None);
         //배경 지도 선택
         naverMap.setMapType(NaverMap.MapType.Navi);
 
@@ -263,6 +291,53 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
             String addr = searchBar.getText().toString();
+            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
+            URL url = new URL(query);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            if (conn != null) {
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setDoInput(true);
+
+                int responseCode = conn.getResponseCode();
+
+                if (responseCode == 200) { //200 = OK , 400 = INVALID_REQUEST , 500 = SYSTEM ERROR
+                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+
+                    int indexFirst;
+                    int indexLast;
+
+                    indexFirst = stringBuilder.indexOf("\"x\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"y\":");
+                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    indexFirst = stringBuilder.indexOf("\"y\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"distance\":");
+                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    tmpLoc = new LatLng(Double.parseDouble(y), Double.parseDouble(x));
+                    bufferedReader.close();
+                    conn.disconnect();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void requestGeocode(String addr) {
+        try {
+            BufferedReader bufferedReader;
+            StringBuilder stringBuilder = new StringBuilder();
             String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -551,7 +626,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         String save = data.toString();
 
-        SharedPreferences sharedPreferences = getSharedPreferences("bookmark", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences(intentText.split(":")[1], MODE_PRIVATE);
 
         int key = sharedPreferences.getAll().size();
 

@@ -9,20 +9,20 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.w3c.dom.Text;
+import android.widget.ToggleButton;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Objects;
 
 
 public class UserActivity extends AppCompatActivity {
@@ -34,82 +34,7 @@ public class UserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
-
-        //SharedPreferences To Print
-        SharedPreferences sharedPreferences = getSharedPreferences("Category",MODE_PRIVATE);
-        int key = sharedPreferences.getAll().size();
-
-        LinearLayout scr_layout = (LinearLayout)findViewById(R.id.scrLayout);
-        ArrayList<Sub_category> categoriesSub = new ArrayList<>();
-
-        for(int i = 0;key > i; i++) {
-            try {
-                categoriesSub.add(new Sub_category(getApplicationContext()));
-                scr_layout.addView(categoriesSub.get(i));
-                Button btn = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
-                TextView dep = (TextView) categoriesSub.get(i).findViewById(R.id.deptext);
-                TextView arv = (TextView) categoriesSub.get(i).findViewById(R.id.arvtext);
-
-                String SP = sharedPreferences.getString(i+"","").toString();
-                btn.setText(SP.split(":")[0]);
-                dep.setText(SP.split(":")[1]);
-                arv.setText(SP.split(":")[2]);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        for(int i = 0;categoriesSub.size()>i;i++) {
-            Button btn = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
-            final int finalI = i;
-            btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Toast.makeText(getApplicationContext(),"Button "+ finalI +" Clicked",Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-
-//        if(key > 0) {
-//            try {
-//                String[][] data = new String[1][3];
-//                final Runnable runnable = new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        UserSub n_layout = new UserSub(getApplicationContext());
-//                        LinearLayout con = (LinearLayout) findViewById(R.id.scrLayout);
-//                        con.addView(n_layout);
-//                        TextView name = (TextView) n_layout.findViewById(R.id.bmName);
-//                        TextView dep = (TextView) n_layout.findViewById(R.id.bmDep);
-//                        TextView arv = (TextView) n_layout.findViewById(R.id.bmArv);
-//                        name.setText(data[0][0]);
-//                        dep.setText(data[0][1]);
-//                        arv.setText(data[0][2]);
-//                    }
-//                };
-//                class NewRunnable implements Runnable {
-//                    @Override
-//                    public void run() {
-//                        data[0][1] = requestReverseGc(data[0][1]);
-//                        data[0][2] = requestReverseGc(data[0][2]);
-//                        mHandler.post(runnable);
-//                    }
-//                }
-//
-//                for (int i = 0; key > i; i++) {
-//                    String input = sharedPreferences.getString(i + "", "");
-//                    data[0] = input.split(":");
-//                    Thread thread = new Thread(new NewRunnable());
-//                    thread.start();
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        } else {
-//            TextView isnull = (TextView) findViewById(R.id.isnull);
-//            isnull.setVisibility(View.VISIBLE);
-//        }
+        listUp();
 
 
 
@@ -126,6 +51,127 @@ public class UserActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        Button ReloadBtn = (Button) findViewById(R.id.btnReload);
+        ReloadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();//인텐트 종료
+                overridePendingTransition(0, 0);//인텐트 효과 없애기
+                Intent intent = getIntent(); //인텐트
+                startActivity(intent); //액티비티 열기
+                overridePendingTransition(0, 0);//인텐트 효과 없애기
+            }
+        });
+    }
+
+    private void listUp() {
+        //SharedPreferences To Print
+        SharedPreferences sharedPreferences = getSharedPreferences("Category",MODE_PRIVATE);
+        int key = sharedPreferences.getAll().size();
+
+        LinearLayout scr_layout = (LinearLayout)findViewById(R.id.scrLayout);
+        ArrayList<Sub_category> categoriesSub = new ArrayList<>();
+        ArrayList<ArrayList<UserSub>> userSubList = new ArrayList<>();
+        ArrayList<UserSub> userSub = new ArrayList<>();
+        String runtime;
+
+        for(int i = 0;key > i; i++) {
+            try {
+                categoriesSub.add(new Sub_category(getApplicationContext()));
+                scr_layout.addView(categoriesSub.get(i));
+                Button btn = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
+                TextView dep = (TextView) categoriesSub.get(i).findViewById(R.id.deptext);
+                TextView arv = (TextView) categoriesSub.get(i).findViewById(R.id.arvtext);
+
+                String SP = sharedPreferences.getString(i+"","").toString();
+                btn.setText(SP.split(":")[0]);
+                dep.setText(SP.split(":")[1]);
+                arv.setText(SP.split(":")[2]);
+
+                SharedPreferences loot = getSharedPreferences(SP.split(":")[0],MODE_PRIVATE);
+                LinearLayout layout = (LinearLayout) categoriesSub.get(i).findViewById(R.id.catlayout);
+                for(int j = 0;loot.getAll().size()>j;j++) {
+                    userSub.add(new UserSub(getApplicationContext()));
+                    layout.addView(userSub.get(j));
+
+                    String SP2 = loot.getString(j+"","");
+                    TextView SubName = (TextView) userSub.get(j).findViewById(R.id.bmName);
+                    TextView SubTime = (TextView) userSub.get(j).findViewById(R.id.bmTime);
+                    String wayPoints;
+                    SubName.setText(SP2.split(":")[0]);
+                    final Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            SubTime.setText(arvTime);
+                        }
+                    };
+                    class NewRunnable implements Runnable {
+                        @Override
+                        public void run() {
+                            String[] Dep = requestGeocode(dep.getText().toString()).split(",");
+                            String[] Arv = requestGeocode(arv.getText().toString()).split(",");
+                            String waypoints = "";
+                            try {
+                                if(SP2.split(":")[3].length() > 0) waypoints = SP2.split(":")[3];
+                            } catch (Exception e) {e.printStackTrace();}
+                            arvTime = requestDirect((Dep[1]+","+Dep[0]),(Arv[1]+","+Arv[0]),waypoints);
+                            mHandler.post(runnable);
+                        }
+                    }
+                    Thread thread = new Thread(new NewRunnable());
+                    thread.start();
+                }
+                userSubList.add(userSub);
+                userSub.clear();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        for(int i = 0;categoriesSub.size()>i;i++) {
+            final int finalI = i;
+            Button lootGen = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
+            Button name = (Button)categoriesSub.get(finalI).findViewById(R.id.catButton);
+            TextView dep = categoriesSub.get(finalI).findViewById(R.id.deptext);
+            TextView arv = categoriesSub.get(finalI).findViewById(R.id.arvtext);
+            lootGen.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(UserActivity.this,MainActivity.class);
+                    intent.putExtra("viewLoot","asd");
+                    Toast.makeText(getApplicationContext(),"lootGen Button "+ finalI +" Clicked",Toast.LENGTH_SHORT).show();
+//                    startActivity(intent);
+                }
+            });
+
+            Button catPlus = (Button)categoriesSub.get(i).findViewById(R.id.catPlus);
+            catPlus.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String input = "saveLoot:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString();
+                    Intent intent = new Intent(UserActivity.this,MainActivity.class);
+                    intent.putExtra("key",input.toString());
+                    startActivity(intent);
+                }
+            });
+
+            ToggleButton toggleBtn = (ToggleButton) categoriesSub.get(i).findViewById(R.id.toggleButton);
+            toggleBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    LinearLayout layout = (LinearLayout) categoriesSub.get(finalI).findViewById(R.id.catlayout);
+                    if (isChecked) {
+                        layout.setVisibility(View.VISIBLE);
+                        catPlus.setVisibility(View.VISIBLE);
+                    } else {
+                        layout.setVisibility(View.GONE);
+                        catPlus.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+
     }
 
     public String requestReverseGc (String location) {
@@ -170,7 +216,7 @@ public class UserActivity extends AppCompatActivity {
         return null;
     }
 
-    public void requestDirect(String depart, String arrival) {
+    public String requestDirect(String depart, String arrival, String waypoints) {
         try {
 
             BufferedReader bufferedReader;
@@ -178,6 +224,7 @@ public class UserActivity extends AppCompatActivity {
 
             String query = "https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start="+depart+"&goal="+arrival;
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
+            if(waypoints != "") query += "&waypoints="+waypoints;
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
@@ -214,11 +261,57 @@ public class UserActivity extends AppCompatActivity {
                 if(minute >= 60) {
                     hour = Math.round(minute/60);
                     minute = Math.round(minute%60);
-                    arvTime = ("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
-                } else { arvTime = ("예상 소요 시간 : "+minute+"분 "+second+"초"); }
+                    return ("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
+                } else { return ("예상 소요 시간 : "+minute+"분 "+second+"초"); }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return "Failed";
+    }
+    private String requestGeocode(String addr) {
+        try {
+            BufferedReader bufferedReader;
+            StringBuilder stringBuilder = new StringBuilder();
+            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
+            URL url = new URL(query);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            if (conn != null) {
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setDoInput(true);
+
+                int responseCode = conn.getResponseCode();
+
+                if (responseCode == 200) { //200 = OK , 400 = INVALID_REQUEST , 500 = SYSTEM ERROR
+                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+
+                    int indexFirst;
+                    int indexLast;
+
+                    indexFirst = stringBuilder.indexOf("\"x\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"y\":");
+                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    indexFirst = stringBuilder.indexOf("\"y\":\"");
+                    indexLast = stringBuilder.indexOf("\",\"distance\":");
+                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
+
+                    return (Double.parseDouble(y)+","+Double.parseDouble(x));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return addr;
     }
 }
