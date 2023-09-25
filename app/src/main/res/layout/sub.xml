@@ -14,7 +14,7 @@
 
         <LinearLayout
             android:id="@+id/L1"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="150dp"
             android:gravity="center"
             android:orientation="vertical">
@@ -22,7 +22,6 @@
             <TextView
                 android:id="@+id/bmName"
                 android:layout_marginVertical="10dp"
-                android:layout_marginHorizontal="15dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
@@ -31,7 +30,6 @@
                 android:text="Loading..." />
             <TextView
                 android:id="@+id/bmDep"
-                android:layout_marginHorizontal="15dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
@@ -41,7 +39,6 @@
             <TextView
                 android:id="@+id/bmArv"
                 android:layout_marginVertical="2dp"
-                android:layout_marginHorizontal="15dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
@@ -59,21 +56,5 @@
             android:layout_weight="1"
 
             />
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="right"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <android.widget.Button
-                android:id="@+id/bmLootGen"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginHorizontal="25dp"
-                android:background="@drawable/button_drawable3"
-                android:text="경로\n보기"
-                android:textColor="@color/white" />
-        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -125,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             setMark(markerDep, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
             depAddr.setText(searchBar.getText().toString());
             searchBar.setText("");
+            marker.setMap(null);
         });
         Button btnMark2 = (Button) findViewById(R.id.btnmark2);
         btnMark2.setOnClickListener(view -> {
@@ -133,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             setMark(markerArv, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
             arvAddr.setText(searchBar.getText().toString());
             searchBar.setText("");
+            marker.setMap(null);
         });
         Button WaypBtn = (Button) findViewById(R.id.btnWay);
         WaypBtn.setOnClickListener(view -> {
@@ -144,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     else if (4 > wayPoints.size()) {setMark(wayP4, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
                     else if (5 > wayPoints.size()) {setMark(wayP5, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
                     wayPoints.add(tmpLoc);
-                    cameraSet(tmpLoc,0);
+                    marker.setMap(null);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -465,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             int zoomLevel = 13;
             if (zoom == 0) {zoomLevel = 17;}
             else if (zoom == 1) {zoomLevel = 13;}
-            else if (zoom == 2) {zoomLevel = 10;}
+            else if (zoom == 2) {zoomLevel = 11;}
             else {zoomLevel = 6;}
             CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(
                     loc,zoomLevel).animate(CameraAnimation.Easing);

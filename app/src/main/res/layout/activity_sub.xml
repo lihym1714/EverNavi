@@ -4,85 +4,107 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/light_orange"
     tools:context=".SubActivity">
-
-    <Button
+    <android.widget.Button
         android:id="@+id/btnMap"
-        style="@style/Widget.Material3.Button.IconButton.Filled"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="340dp"
         android:layout_marginTop="665dp"
         android:layout_marginEnd="21dp"
         android:layout_marginBottom="16dp"
-        app:icon="@android:drawable/ic_dialog_map"
+        android:text="R"
+        android:textColor="@color/white"
+        android:background="@drawable/button_drawable1"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="150dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="130dp"
-        android:layout_marginTop="125dp"
-        android:layout_marginEnd="130dp"
-        android:layout_marginBottom="556dp"
-        android:fontFamily="monospace"
-        android:lineSpacingExtra="8sp"
-        android:text="BookMark"
-        android:textAlignment="center"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/departureInput"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="100dp"
-        android:layout_marginTop="46dp"
-        android:layout_marginEnd="100dp"
-        android:layout_marginBottom="465dp"
-        android:ems="10"
-        android:hint="Departure"
-        android:inputType="text"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <EditText
-        android:id="@+id/ArrivalInput"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="100dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="101dp"
-        android:layout_marginBottom="389dp"
-        android:ems="10"
-        android:hint="Arrival"
-        android:inputType="textPassword"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/departureInput" />
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="150dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="40dp"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="8sp"
+            android:text="BookMark"
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/Save"
-        android:layout_width="110dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="150dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="150dp"
-        android:text="Save"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ArrivalInput" />
+        <EditText
+            android:id="@+id/nameInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:ems="10"
+            android:hint="경로명"
+            android:backgroundTint="@color/white"
+            android:textColorHint="@color/white"
+            android:textColor="@color/white"
+            android:inputType="text"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+        <EditText
+            android:id="@+id/departureInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:ems="10"
+            android:hint="출발지"
+            android:backgroundTint="@color/white"
+            android:textColorHint="@color/white"
+            android:textColor="@color/white"
+            android:inputType="text"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+        <EditText
+            android:id="@+id/arrivalInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:textColorHint="@color/white"
+            android:textColor="@color/white"
+            android:layout_marginBottom="20dp"
+            android:ems="10"
+            android:hint="도착지"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/departureInput" />
+
+        <android.widget.Button
+            android:id="@+id/Save"
+            android:layout_width="110dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="30dp"
+            android:text="저장"
+            android:textColor="@color/white"
+            android:background="@drawable/button_drawable3"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/ArrivalInput" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
