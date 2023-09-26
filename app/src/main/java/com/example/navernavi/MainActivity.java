@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final Marker wayP4 = new Marker();
     private final Marker wayP5 = new Marker();
     List<List<LatLng>> loot;
+    List<List<List<LatLng>>> SavePath;
+    List<List<Integer>> SaveCongestion;
     List<Integer> Congestion = new ArrayList<>();
 
     private double depX, depY, arvX, arvY;
@@ -80,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MapView mapView = (MapView) findViewById(R.id.map_view);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-        LinearLayout cardBar = (LinearLayout) findViewById(R.id.cardView);
         LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
         cardBar2.setVisibility(View.INVISIBLE);
 
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         arvAddr.setText(text.split(":")[3]);
         intentText = text;
 
-        if(text.split(":")[0].contains("saveLoot")) {
+        if(true) {
             final Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -119,8 +120,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }).start();
         }
+        if(text.split(":")[0].contains("viewLoot")) {
+            try {
+                SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
+                for(int i = 0;lootShared.getAll().size()>i;i++) {
+                    String[] lootString = lootShared.getString(i+"","").split(":");
+                    //lootString [0] = name / [1] = dep / [2] = arv / [3] = waypoint
+                    final Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            drawPath(loot);
+                        }
+                    };
+                    new Thread(() -> {
+                        try {
+                            if (4 > lootString.length) {requestDirect(0, lootString[1], lootString[2],"");}
+                            else {requestDirect(0, lootString[1], lootString[2],lootString[3]);}
+//                            SavePath.add(loot);
+//                            SaveCongestion.add(Congestion);
+                            mHandler.post(runnable);
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
 
-        EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
+                    }).start();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+            EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         try {
             searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
             searchBar.setOnEditorActionListener((v, actionId, event) -> {
@@ -153,24 +183,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // 마크 버튼 클릭시 지정된 좌표에 마크 표시
-        Button btnMark = (Button) findViewById(R.id.btnmark1);
-        btnMark.setOnClickListener(view -> {
-            depart = tmpLoc;
-            setMark(markerDep, depart, com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-            depAddr.setText(searchBar.getText().toString());
-            searchBar.setText("");
-            marker.setMap(null);
-        });
-        Button btnMark2 = (Button) findViewById(R.id.btnmark2);
-        btnMark2.setOnClickListener(view -> {
-            arrival = tmpLoc;
-            setMark(markerArv, arrival, com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-            arvAddr.setText(searchBar.getText().toString());
-            searchBar.setText("");
-            marker.setMap(null);
-        });
         Button WaypBtn = (Button) findViewById(R.id.btnWay);
         WaypBtn.setOnClickListener(view -> {
             try {
@@ -193,7 +205,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             final Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    cardBar.setVisibility(View.INVISIBLE);
                     if (loot != null) {
                         cardBar2.setVisibility(View.VISIBLE);
                         searchBar.setVisibility(View.INVISIBLE);
@@ -214,8 +225,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
 //                        arvX = arrival.latitude;
 //                        arvY = arrival.longitude;
-                        requestDirect(0, depY + "," + depX, arvY + "," + arvX);
-                        requestDirect(1, depY + "," + depX, arvY + "," + arvX);
+                        requestDirect(0, depY + "," + depX, arvY + "," + arvX,"");
+                        requestDirect(1, depY + "," + depX, arvY + "," + arvX,"");
                         LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
                         mHandler.post(runnable);
                         cameraSet(avgLoc,2);
@@ -382,7 +393,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @SuppressLint("SetTextI18n")
-    public void requestDirect(int div, String Depart, String Arrival) {
+    public void requestDirect(int div, String Depart, String Arrival, String waypoints) {
         try {
 
             BufferedReader bufferedReader;
@@ -390,13 +401,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
             StringBuilder query = new StringBuilder("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start=" + Depart + "&goal=" + Arrival);
             query.append("&").append(option[0]);
-            if(wayPoints != null) {
+            if(0>wayPoints.size() && waypoints == "") {
                 query.append("&waypoints=");
                 for(int i = 0;wayPoints.size()>i;i++) {
                     String wayP = wayPoints.get(i).longitude + "," + wayPoints.get(i).latitude;
                     query.append(wayP).append("|");
                 }
-            }
+            } else {query.append("&waypoints="+waypoints);}
             URL url = new URL(query.toString());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
@@ -504,7 +515,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                         multiPath.add(Loot);
                         Congestion.add(congestion.get(0));
-
                         loot = multiPath;
                     } else if (div == 1) {
                         indexFirst = stringBuilder.indexOf("\"goal\":");
@@ -525,8 +535,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         } else {
                             runtime.setText("예상 소요 시간 : " + minute + "분 " + second + "초");
                         }
-
-                        Integer.parseInt(String.valueOf(arrivalTime));
                     }
                 }
             }
@@ -556,6 +564,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             MultipartPathOverlay path = new MultipartPathOverlay();
             path.setCoordParts(Loot);
+            path.setPatternImage(OverlayImage.fromResource(R.drawable.triangle_drawable_path));
             List colorParts = new ArrayList<Color>();
             for(int i = 0;Congestion.size()>i;i++) {
                 switch (Congestion.get(i)) {
@@ -628,10 +637,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         SharedPreferences sharedPreferences = getSharedPreferences(intentText.split(":")[1], MODE_PRIVATE);
 
-        int key = sharedPreferences.getAll().size();
+        String key = String.valueOf(sharedPreferences.getAll().size());
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(key+"",save);
+        editor.putString(key,save);
         editor.commit();
     }
 }

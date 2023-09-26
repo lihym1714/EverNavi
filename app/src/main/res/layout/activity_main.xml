@@ -13,14 +13,11 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-
-
         <!-- 네이버 지도 -->
         <com.naver.maps.map.MapView
             android:id="@+id/map_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
 
             <EditText
                 android:id="@+id/editTextSearch"
@@ -46,48 +43,23 @@
                     android:id="@+id/btnWay"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:background="@drawable/button_drawable3"
-                    android:textColor="@color/white"
-                    android:text="경유"
                     android:layout_margin="10dp"
+                    android:background="@drawable/button_drawable3"
+                    android:text="경유"
+                    android:textColor="@color/white"
                     app:layout_constraintEnd_toStartOf="@+id/btnmark2" />
 
                 <android.widget.Button
                     android:id="@+id/lootGen"
-                    android:textColor="@color/white"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
+                    android:background="@drawable/button_drawable3"
                     android:text="경로\n생성"
-                    android:background="@drawable/button_drawable3" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_marginTop="720dp"
-                android:id="@+id/cardView"
-                android:layout_width="412dp"
-                android:layout_height="100dp"
-                android:background="@drawable/card_view_drawable1"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:visibility="invisible">
-
-                <android.widget.Button
-                    android:id="@+id/btnmark1"
-                    android:layout_width="90dp"
-                    android:layout_height="50dp"
-                    android:background="@drawable/button_drawable3"
-                    android:textColor="@color/white"
-                    android:text="출발" />
-
-                <android.widget.Button
-                    android:id="@+id/btnmark2"
-                    android:layout_width="90dp"
-                    android:layout_height="50dp"
-                    android:background="@drawable/button_drawable3"
-                    android:textColor="@color/white"
-                    android:text="도착"
-                    app:layout_constraintEnd_toStartOf="@+id/btnmark1" />
-
+                    android:textColor="@color/white" />
+                <Spinner
+                    android:id="@+id/spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
 

@@ -98,12 +98,14 @@ public class UserActivity extends AppCompatActivity {
                     String SP2 = loot.getString(j+"","");
                     TextView SubName = (TextView) userSub.get(j).findViewById(R.id.bmName);
                     TextView SubTime = (TextView) userSub.get(j).findViewById(R.id.bmTime);
-                    String wayPoints;
+                    TextView wayPTxt = (TextView) userSub.get(j).findViewById(R.id.waypointText);
                     SubName.setText(SP2.split(":")[0]);
+                    final String[] wayPointTmp = new String[1];
                     final Runnable runnable = new Runnable() {
                         @Override
                         public void run() {
                             SubTime.setText(arvTime);
+                            wayPTxt.setText(wayPointTmp[0]);
                         }
                     };
                     class NewRunnable implements Runnable {
@@ -114,6 +116,7 @@ public class UserActivity extends AppCompatActivity {
                             String waypoints = "";
                             try {
                                 if(SP2.split(":")[3].length() > 0) waypoints = SP2.split(":")[3];
+                                wayPointTmp[0] = waypoints;
                             } catch (Exception e) {e.printStackTrace();}
                             arvTime = requestDirect((Dep[1]+","+Dep[0]),(Arv[1]+","+Arv[0]),waypoints);
                             mHandler.post(runnable);
@@ -138,10 +141,14 @@ public class UserActivity extends AppCompatActivity {
             lootGen.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent intent = new Intent(UserActivity.this,MainActivity.class);
-                    intent.putExtra("viewLoot","asd");
-                    Toast.makeText(getApplicationContext(),"lootGen Button "+ finalI +" Clicked",Toast.LENGTH_SHORT).show();
-//                    startActivity(intent);
+                    try {
+                        Intent intent = new Intent(UserActivity.this,MainActivity.class);
+                        String input = "viewLoot:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString();
+                        intent.putExtra("key",input);
+                        startActivity(intent);
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             });
 
@@ -151,7 +158,7 @@ public class UserActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     String input = "saveLoot:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString();
                     Intent intent = new Intent(UserActivity.this,MainActivity.class);
-                    intent.putExtra("key",input.toString());
+                    intent.putExtra("key",input);
                     startActivity(intent);
                 }
             });
@@ -164,9 +171,11 @@ public class UserActivity extends AppCompatActivity {
                     if (isChecked) {
                         layout.setVisibility(View.VISIBLE);
                         catPlus.setVisibility(View.VISIBLE);
+                        toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable));
                     } else {
                         layout.setVisibility(View.GONE);
                         catPlus.setVisibility(View.GONE);
+                        toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable2));
                     }
                 }
             });
@@ -243,26 +252,22 @@ public class UserActivity extends AppCompatActivity {
                 }
 
                 int indexFirst,indexLast;
-                SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                indexFirst = stringBuilder.indexOf("\"currentDateTime\":");
-                indexLast = stringBuilder.indexOf("\"route");
-
-                Date currentTime = (Date) DateFormat.parse(stringBuilder.substring(indexFirst+19,indexLast-2).replace("T"," "));
-                System.out.println(currentTime);
-
-                indexFirst = stringBuilder.indexOf("\"duration\":");
+                indexFirst = stringBuilder.indexOf("\"goal\":");
                 indexLast = stringBuilder.indexOf("\"etaService");
 
-                int arrivalTime = Integer.parseInt(stringBuilder.substring(indexFirst+11,indexLast-1))/1000;
+                String[] indexing = stringBuilder.substring(indexFirst + 11, indexLast - 1).split(",");
+                long arrivalTime = Long.parseLong(indexing[indexing.length - 1].replaceAll("[^0-9]", "")) / 1000;
 
                 long hour;
-                long minute = Math.round(arrivalTime/60);
-                long second = Math.round(arrivalTime%60);
-                if(minute >= 60) {
-                    hour = Math.round(minute/60);
-                    minute = Math.round(minute%60);
-                    return ("예상 소요 시간 : "+hour+"시간 "+minute+"분 "+second+"초");
-                } else { return ("예상 소요 시간 : "+minute+"분 "+second+"초"); }
+                long minute = Math.round(arrivalTime / 60);
+                long second = Math.round(arrivalTime % 60);
+                if (minute >= 60) {
+                    hour = Math.round(minute / 60);
+                    minute = Math.round(minute % 60);
+                    return "예상 소요 시간 : " + hour + "시간 " + minute + "분 " + second + "초";
+                } else {
+                    return "예상 소요 시간 : " + minute + "분 " + second + "초";
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
