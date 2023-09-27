@@ -163,24 +163,45 @@ public class UserActivity extends AppCompatActivity {
                 }
             });
 
+
             ToggleButton toggleBtn = (ToggleButton) categoriesSub.get(i).findViewById(R.id.toggleButton);
             toggleBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     LinearLayout layout = (LinearLayout) categoriesSub.get(finalI).findViewById(R.id.catlayout);
                     if (isChecked) {
-                        layout.setVisibility(View.VISIBLE);
-                        catPlus.setVisibility(View.VISIBLE);
-                        toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable));
-                    } else {
                         layout.setVisibility(View.GONE);
                         catPlus.setVisibility(View.GONE);
                         toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable2));
+                    } else {
+                        layout.setVisibility(View.VISIBLE);
+                        catPlus.setVisibility(View.VISIBLE);
+                        toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable));
                     }
                 }
             });
         }
 
+    }
+
+
+    private long backKeyPressedTime = 0;
+    @Override
+    public void onBackPressed() {
+        // 기존의 뒤로가기 버튼의 기능 제거
+        // super.onBackPressed();
+
+        // 2000 milliseconds = 2 seconds
+        if (System.currentTimeMillis() > backKeyPressedTime + 2000) {
+            backKeyPressedTime = System.currentTimeMillis();
+            Toast.makeText(this, "\'뒤로\' 버튼을 한번 더 누르시면 종료됩니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2초 이내에 뒤로가기 버튼을 한번 더 클릭시 finish()(앱 종료)
+        if (System.currentTimeMillis() <= backKeyPressedTime + 2000) {
+            finish();
+        }
     }
 
     public String requestReverseGc (String location) {

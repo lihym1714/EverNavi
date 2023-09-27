@@ -10,15 +10,19 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -92,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         depAddr.setText(text.split(":")[2]);
         arvAddr.setText(text.split(":")[3]);
         intentText = text;
+        LinearLayout lootGenLayout = (LinearLayout) findViewById(R.id.lootGenLayout);
 
         if(true) {
             final Runnable runnable = new Runnable() {
@@ -120,37 +125,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }).start();
         }
-        if(text.split(":")[0].contains("viewLoot")) {
-            try {
-                SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
-                for(int i = 0;lootShared.getAll().size()>i;i++) {
-                    String[] lootString = lootShared.getString(i+"","").split(":");
-                    //lootString [0] = name / [1] = dep / [2] = arv / [3] = waypoint
-                    final Runnable runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            drawPath(loot);
-                        }
-                    };
-                    new Thread(() -> {
-                        try {
-                            if (4 > lootString.length) {requestDirect(0, lootString[1], lootString[2],"");}
-                            else {requestDirect(0, lootString[1], lootString[2],lootString[3]);}
-//                            SavePath.add(loot);
-//                            SaveCongestion.add(Congestion);
-                            mHandler.post(runnable);
-                        }catch (Exception e) {
-                            e.printStackTrace();
-                        }
 
-                    }).start();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+
+        Spinner spinner = (Spinner)findViewById(R.id.spinner);
+        String[] items = {"Trafast","Traoptional"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,items);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        spinner.setAdapter(adapter);
+
+        int verticalOffset = Math.round(getApplicationContext().getResources().getDisplayMetrics().density * 30);
+        spinner.setDropDownVerticalOffset(verticalOffset);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
             }
-        }
 
-            EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         try {
             searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
             searchBar.setOnEditorActionListener((v, actionId, event) -> {
@@ -164,7 +161,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
                                 searchBar.clearFocus();
                                 setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-//                                cardBar.setVisibility(View.VISIBLE);
                             }
                         };
                           new Thread(() -> {
@@ -223,8 +219,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             depX = depart.latitude;
                             depY = depart.longitude;
                         }
-//                        arvX = arrival.latitude;
-//                        arvY = arrival.longitude;
                         requestDirect(0, depY + "," + depX, arvY + "," + arvX,"");
                         requestDirect(1, depY + "," + depX, arvY + "," + arvX,"");
                         LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
@@ -239,9 +233,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Button mapClear = (Button) findViewById(R.id.btnClear);
         mapClear.setOnClickListener(view -> {
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             finish();
-            startActivity(intent);
         });
 
         Button saveBtn = (Button) findViewById(R.id.btnSave);
@@ -276,6 +268,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 ad.show();
             }
         });
+
+        //After Intent Changed
+        if(text.split(":")[0].contains("viewLoot")) {
+            lootGenLayout.setVisibility(View.GONE);
+            try {
+                SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
+                for(int i = 0;lootShared.getAll().size()>i;i++) {
+                    String[] lootString = lootShared.getString(i+"","").split(":");
+                    //lootString [0] = name / [1] = dep / [2] = arv / [3] = waypoint
+                    final Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            drawPath(loot);
+                        }
+                    };
+                    new Thread(() -> {
+                        try {
+                            if (4 > lootString.length) {requestDirect(0, lootString[1], lootString[2],"");}
+                            else {requestDirect(0, lootString[1], lootString[2],lootString[3]);}
+//                            SavePath.add(loot);
+//                            SaveCongestion.add(Congestion);
+                            mHandler.post(runnable);
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    }).start();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -401,7 +425,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
             StringBuilder query = new StringBuilder("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start=" + Depart + "&goal=" + Arrival);
             query.append("&").append(option[0]);
-            if(0>wayPoints.size() && waypoints == "") {
+            if(wayPoints.size() > 0 && waypoints == "") {
                 query.append("&waypoints=");
                 for(int i = 0;wayPoints.size()>i;i++) {
                     String wayP = wayPoints.get(i).longitude + "," + wayPoints.get(i).latitude;
@@ -568,15 +592,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             List colorParts = new ArrayList<Color>();
             for(int i = 0;Congestion.size()>i;i++) {
                 switch (Congestion.get(i)) {
-                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#1DDB16"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#1DDB16"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FFDF24"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FFDF24"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FF8224"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FF8224"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#ED0000"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#ED0000"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 4: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#AAAAAA"), Color.WHITE, Color.GRAY, Color.LTGRAY));
+                    case 4: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#AAAAAA"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                     break;
                 }
             }

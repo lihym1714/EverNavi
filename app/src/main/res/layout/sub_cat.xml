@@ -18,15 +18,16 @@
 
         <ToggleButton
             android:id="@+id/toggleButton"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:checked="false"
             android:layout_gravity="center"
-            android:background="@drawable/triangle_drawable2"
+            android:background="@drawable/triangle_drawable"
             android:textColor="@color/white"
             android:textOn=" "
             android:textOff=" "
-            android:layout_marginStart="7dp" />
+            android:layout_marginEnd="5dp"
+            android:layout_marginStart="15dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -71,7 +72,7 @@
                     android:textAlignment="center"
                     android:gravity="center"
                     android:text="Loading..."
-                    android:layout_marginEnd="10dp"
+                    android:layout_marginEnd="20dp"
                     android:background="@drawable/text_view_drawable"/>
             </LinearLayout>
         </LinearLayout>
@@ -81,7 +82,7 @@
         android:id="@+id/catlayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:visibility="visible"
         android:orientation="vertical">
 
     </LinearLayout>
@@ -95,7 +96,7 @@
             android:background="@drawable/button_drawable3"
             android:id="@+id/catPlus"
             android:text="+"
-            android:visibility="gone"
+            android:visibility="visible"
             android:textColor="@color/white"
             android:layout_width="30dp"
             android:layout_height="30dp"/>
