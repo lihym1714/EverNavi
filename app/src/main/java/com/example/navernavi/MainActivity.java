@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import retrofit2.Retrofit;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -369,6 +371,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+
     private void requestGeocode(String addr) {
         try {
             BufferedReader bufferedReader;
@@ -455,43 +458,53 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     int indexFirst, indexLast;
                     if (div == 0) { //0 = 루트 생성 , 1 = 트래픽 검색
                         ArrayList<LatLng> Loot = new ArrayList<>();
-                        ArrayList<Integer> pointIndex = new ArrayList<>();
-                        ArrayList<Integer> pointCount = new ArrayList<>();
-                        ArrayList<Integer> congestion = new ArrayList<>();
+                        ArrayList<Double> duration = new ArrayList<>();
+                        ArrayList<Double> distance = new ArrayList<>();
+                        ArrayList<Integer> pointindex = new ArrayList<>();
+                        ArrayList<String> type = new ArrayList<>();
+
 
                         indexFirst = stringBuilder.indexOf("\"path\":");
                         indexLast = stringBuilder.indexOf(",\"section\"");
                         String[] coord = (stringBuilder.substring(indexFirst + 8, indexLast - 1)).split(",");
 
                         indexFirst = stringBuilder.indexOf("\"guide");
-                        String section = stringBuilder.substring(indexLast + 9, indexFirst);
+                        String guide = stringBuilder.substring(indexFirst);
                         ArrayList<Integer> tmpArr = new ArrayList<>();
-                        Matcher matcher = Pattern.compile("pointIndex").matcher(section);
+                        Matcher matcher = Pattern.compile("duration").matcher(guide);
                         while (matcher.find()) {
                             tmpArr.add(matcher.start());
                         }
                         while (!tmpArr.isEmpty()) {
-                            pointIndex.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
+                            duration.add(Double.parseDouble(guide.substring(tmpArr.get(0) + 8,
                                     tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
                             tmpArr.remove(0);
                         }
 
-                        matcher = Pattern.compile("pointCount").matcher(section);
+                        matcher = Pattern.compile("distance").matcher(guide);
                         while (matcher.find()) {
                             tmpArr.add(matcher.start());
                         }
                         while (!tmpArr.isEmpty()) {
-                            pointCount.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
+                            distance.add(Double.parseDouble(guide.substring(tmpArr.get(0) + 9,
+                                    tmpArr.get(0) + 16).replaceAll("[^0-9]", "")));
+                            tmpArr.remove(0);
+                        }
+                        matcher = Pattern.compile("pointIndex").matcher(guide);
+                        while (matcher.find()) {
+                            tmpArr.add(matcher.start());
+                        }
+                        while (!tmpArr.isEmpty()) {
+                            pointindex.add(Integer.parseInt(guide.substring(tmpArr.get(0) + 12,
                                     tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
                             tmpArr.remove(0);
                         }
-                        matcher = Pattern.compile("congestion").matcher(section);
+                        matcher = Pattern.compile("instructions").matcher(guide);
                         while (matcher.find()) {
                             tmpArr.add(matcher.start());
                         }
                         while (!tmpArr.isEmpty()) {
-                            congestion.add(Integer.parseInt(section.substring(tmpArr.get(0) + 12,
-                                    tmpArr.get(0) + 17).replaceAll("[^0-9]", "")));
+                            type.add(guide.substring(tmpArr.get(0) + 12, tmpArr.get(0) + 55));
                             tmpArr.remove(0);
                         }
                         for (int i = 0; coord.length > i; i += 2) {
@@ -503,42 +516,73 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         ArrayList<List<LatLng>> multiPath = new ArrayList<>();
                         ArrayList<LatLng> tmpPath = new ArrayList<>(1000);
-
-                        int cnt = 0;
-                        while (!pointIndex.isEmpty()) {
+                        double time;
+                        int cnt = 0, speed1=0, speed2=0;
+//                        Congestion.add(1);
+                        while(!pointindex.isEmpty()) {
                             try {
-                                if (pointIndex.get(0) + pointCount.get(0) == cnt) {
+                                if (pointindex.get(0) == cnt) {
+                                    //(distance / (duration/1000)) * 3.6
+                                    if(type.get(0).contains("고속도로 진입")) {
+                                        if (type.get(0).contains("도시고속도로")) {speed1 = 30; speed2 = 15;}
+                                        else if (type.get(0).contains("고속도로 진출")) {speed1 = 0; speed2=0;}
+                                        else {speed1 = 40; speed2 = 25;}
+                                    }
                                     tmpPath.add(Loot.get(0));
-                                    multiPath.add((List<LatLng>) tmpPath.clone());
+                                    time = (distance.get(0) / (duration.get(0)/1000)) * 3.6;
+                                    if(tmpPath.size()==1) tmpPath.add(tmpPath.get(0));
+                                    if (!tmpPath.isEmpty()) multiPath.add((List<LatLng>) tmpPath.clone());
+                                    pointindex.remove(0); distance.remove(0); duration.remove(0); type.remove(0);
                                     tmpPath.clear();
-                                    pointCount.remove(0);
-                                    pointIndex.remove(0);
-                                    Congestion.add(congestion.get(0));
-                                    if (congestion.size() > 1) congestion.remove(0);
-                                } else if (pointIndex.get(0) == cnt) {
-                                    tmpPath.add(Loot.get(0));
-                                    multiPath.add((List<LatLng>) tmpPath.clone());
-                                    tmpPath.clear();
-                                    Congestion.add(congestion.get(0));
+                                    if (time >= 30+speed1) {Congestion.add(1);}
+                                    else if (time >= 15+speed2) {Congestion.add(2);}
+                                    else if (15+speed2 > time) {Congestion.add(3);}
+//                                    else if (tmpPath.isEmpty()) {Congestion.add(1);}
                                 }
-                                if (pointIndex.get(0) + pointCount.get(0) >= cnt && cnt >= pointIndex.get(0)) {
+                                else {
                                     tmpPath.add(Loot.get(0));
                                     Loot.remove(0);
-                                    cnt++;
-                                } else if (pointIndex.get(0) + pointCount.get(0) > cnt) {
-                                    tmpPath.add(Loot.get(0));
-                                    Loot.remove(0);
-                                    cnt++;
                                 }
-                            } catch (Exception e) {
+                            }catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            cnt++;
                         }
-                        if (Loot.size() <= 1) {
-                            Loot.add(Loot.get(0));
-                        }
+
+//                        int cnt = 0;
+//                        while (!duration.isEmpty()) {
+//                            try {
+////                                if (duration.get(0) + distance.get(0) == cnt) {
+////                                    tmpPath.add(Loot.get(0));
+////                                    multiPath.add((List<LatLng>) tmpPath.clone());
+////                                    tmpPath.clear();
+////                                    distance.remove(0);
+////                                    duration.remove(0);
+////                                    Congestion.add(congestion.get(0));
+////                                    congestion.remove(0);
+////                                } else if (duration.get(0) == cnt) {
+////                                    tmpPath.add(Loot.get(0));
+////                                    multiPath.add((List<LatLng>) tmpPath.clone());
+////                                    tmpPath.clear();
+////                                    Congestion.add(1);
+////                                }
+////                                if (duration.get(0) + distance.get(0) >= cnt && cnt >= duration.get(0)) {
+////                                    tmpPath.add(Loot.get(0));
+////                                    Loot.remove(0);
+////                                    cnt++;
+////                                } else if (duration.get(0) + distance.get(0) > cnt) {
+////                                    tmpPath.add(Loot.get(0));
+////                                    Loot.remove(0);
+////                                    cnt++;
+////                                }
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                        if (Loot.size() <= 1) {
+//                            Loot.add(Loot.get(0));
+//                        }
                         multiPath.add(Loot);
-                        Congestion.add(congestion.get(0));
                         loot = multiPath;
                     } else if (div == 1) {
                         indexFirst = stringBuilder.indexOf("\"goal\":");
@@ -592,19 +636,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             List colorParts = new ArrayList<Color>();
             for(int i = 0;Congestion.size()>i;i++) {
                 switch (Congestion.get(i)) {
-                    case 0: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#1DDB16"), Color.BLACK, Color.GRAY, Color.LTGRAY));
+                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#1DDB16"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 1: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FFDF24"), Color.BLACK, Color.GRAY, Color.LTGRAY));
-                        break;
-                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FF8224"), Color.BLACK, Color.GRAY, Color.LTGRAY));
+                    case 2: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#FFDF24"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
                     case 3: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#ED0000"), Color.BLACK, Color.GRAY, Color.LTGRAY));
                         break;
-                    case 4: colorParts.add(new MultipartPathOverlay.ColorPart(Color.parseColor("#AAAAAA"), Color.BLACK, Color.GRAY, Color.LTGRAY));
-                    break;
                 }
             }
             path.setCoordParts(Loot);
+
             path.setWidth(15);
             path.setOutlineWidth(5);
             path.setColorParts(colorParts);
