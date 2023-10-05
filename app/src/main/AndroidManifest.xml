@@ -26,7 +26,6 @@
         <activity
             android:name=".UserActivity"
             android:exported="true"
-            android:label="@string/title_activity_user"
             android:theme="@style/Theme.NaverNavi" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

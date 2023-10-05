@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -46,6 +47,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,9 +65,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final Marker wayP3 = new Marker();
     private final Marker wayP4 = new Marker();
     private final Marker wayP5 = new Marker();
+    private boolean isView = false;
     List<List<LatLng>> loot;
-    List<List<List<LatLng>>> SavePath;
-    List<List<Integer>> SaveCongestion;
     List<Integer> Congestion = new ArrayList<>();
 
     private double depX, depY, arvX, arvY;
@@ -83,13 +84,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
 
-
         // 네이버 지도 UI출력
         MapView mapView = (MapView) findViewById(R.id.map_view);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
         cardBar2.setVisibility(View.INVISIBLE);
+
 
         Intent userIntent = getIntent();
         String text = userIntent.getStringExtra("key");
@@ -117,11 +118,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             };
             new Thread(() -> {
-                requestGeocode(text.split(":")[2]);
+                requestKeyword(text.split(":")[2]);
                 if (tmpLoc != null) {
                     mHandler.post(runnable);
                 }
-                requestGeocode(text.split(":")[3]);
+                requestKeyword(text.split(":")[3]);
                 if (tmpLoc != null) {
                     mHandler.post(runnable);
                 }
@@ -149,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+
         EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
         try {
             searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -166,12 +168,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         };
                           new Thread(() -> {
-                            requestGeocode();
-                            if (tmpLoc != null) {
-                                cameraSet(tmpLoc, 0);
-                                mHandler.post(runnable);
-                            }
-                        }).start();
+                              requestKeyword();
+                              if (tmpLoc != null) {
+                                  cameraSet(tmpLoc, 0);
+                                  mHandler.post(runnable);
+                              }
+                          }).start();
                     } else {
                         Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
                     }
@@ -204,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void run() {
                     if (loot != null) {
+                        isView=true;
                         cardBar2.setVisibility(View.VISIBLE);
                         searchBar.setVisibility(View.INVISIBLE);
                         drawPath(loot);
@@ -272,8 +275,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         //After Intent Changed
-        if(text.split(":")[0].contains("viewLoot")) {
+        if(text.split(":")[0].contains("viewLootOnly")) {
+            SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
+            String[] lootString = lootShared.getString(text.split(":")[4]+"","").split(":");
             lootGenLayout.setVisibility(View.GONE);
+            isView = true;
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    drawPath(loot);
+                }
+            };
+            new Thread(() -> {
+                try {
+                    if (4 > lootString.length) {requestDirect(0, lootString[1], lootString[2],"");}
+                    else {requestDirect(0, lootString[1], lootString[2],lootString[3]);}
+                    mHandler.post(runnable);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }).start();
+        }
+        else if(text.split(":")[0].contains("viewLoot")) {
+            lootGenLayout.setVisibility(View.GONE);
+            isView = true;
             try {
                 SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
                 for(int i = 0;lootShared.getAll().size()>i;i++) {
@@ -289,8 +315,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         try {
                             if (4 > lootString.length) {requestDirect(0, lootString[1], lootString[2],"");}
                             else {requestDirect(0, lootString[1], lootString[2],lootString[3]);}
-//                            SavePath.add(loot);
-//                            SaveCongestion.add(Congestion);
                             mHandler.post(runnable);
                         }catch (Exception e) {
                             e.printStackTrace();
@@ -315,12 +339,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setLocationTrackingMode(LocationTrackingMode.None);
         //배경 지도 선택
         naverMap.setMapType(NaverMap.MapType.Navi);
-
+//        naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_TRAFFIC,true);
+//        naverMap.setLiteModeEnabled(true);
         //건물 표시
         naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
+
+        if(!isView) {
+            naverMap.setOnMapClickListener((pointF, latLng) -> {
+                tmpLoc = latLng;
+                setMark(marker, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
+            });
+        }
     }
 
-    private void requestGeocode() {
+    private void requestKeyword() {
         try {
             EditText searchBar;
             searchBar = findViewById(R.id.editTextSearch);
@@ -328,15 +360,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
             String addr = searchBar.getText().toString();
-            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
+            String query = "https://dapi.kakao.com/v2/local/search/keyword.json?page=1&size=1&sort=accuracy&query=" + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
             if (conn != null) {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("Authorization", "KakaoAK 85866fd056ceefc6ea65b49fbfd5fe75");
                 conn.setDoInput(true);
 
                 int responseCode = conn.getResponseCode();
@@ -350,41 +382,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         stringBuilder.append(line).append("\n");
                     }
 
-                    int indexFirst;
-                    int indexLast;
-
-                    indexFirst = stringBuilder.indexOf("\"x\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"y\":");
-                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    indexFirst = stringBuilder.indexOf("\"y\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"distance\":");
-                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    tmpLoc = new LatLng(Double.parseDouble(y), Double.parseDouble(x));
+                    int index = stringBuilder.indexOf("x")+3;
+                    double x = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
+                    index = index + 22;
+                    double y = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
+                    tmpLoc = new LatLng(y,x);
                     bufferedReader.close();
                     conn.disconnect();
                 }
             }
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
-    private void requestGeocode(String addr) {
+    private void requestKeyword(String addr) {
         try {
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
-            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
+            String query = "https://dapi.kakao.com/v2/local/search/keyword.json?page=1&size=1&sort=accuracy&query=" + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
             if (conn != null) {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("Authorization", "KakaoAK 85866fd056ceefc6ea65b49fbfd5fe75");
                 conn.setDoInput(true);
 
                 int responseCode = conn.getResponseCode();
@@ -398,26 +422,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         stringBuilder.append(line).append("\n");
                     }
 
-                    int indexFirst;
-                    int indexLast;
-
-                    indexFirst = stringBuilder.indexOf("\"x\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"y\":");
-                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    indexFirst = stringBuilder.indexOf("\"y\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"distance\":");
-                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    tmpLoc = new LatLng(Double.parseDouble(y), Double.parseDouble(x));
+                    int index = stringBuilder.indexOf("x")+3;
+                    double x = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
+                    index = index + 22;
+                    double y = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
+                    tmpLoc = new LatLng(y,x);
                     bufferedReader.close();
                     conn.disconnect();
                 }
             }
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     @SuppressLint("SetTextI18n")
     public void requestDirect(int div, String Depart, String Arrival, String waypoints) {
@@ -548,40 +566,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                             cnt++;
                         }
-
-//                        int cnt = 0;
-//                        while (!duration.isEmpty()) {
-//                            try {
-////                                if (duration.get(0) + distance.get(0) == cnt) {
-////                                    tmpPath.add(Loot.get(0));
-////                                    multiPath.add((List<LatLng>) tmpPath.clone());
-////                                    tmpPath.clear();
-////                                    distance.remove(0);
-////                                    duration.remove(0);
-////                                    Congestion.add(congestion.get(0));
-////                                    congestion.remove(0);
-////                                } else if (duration.get(0) == cnt) {
-////                                    tmpPath.add(Loot.get(0));
-////                                    multiPath.add((List<LatLng>) tmpPath.clone());
-////                                    tmpPath.clear();
-////                                    Congestion.add(1);
-////                                }
-////                                if (duration.get(0) + distance.get(0) >= cnt && cnt >= duration.get(0)) {
-////                                    tmpPath.add(Loot.get(0));
-////                                    Loot.remove(0);
-////                                    cnt++;
-////                                } else if (duration.get(0) + distance.get(0) > cnt) {
-////                                    tmpPath.add(Loot.get(0));
-////                                    Loot.remove(0);
-////                                    cnt++;
-////                                }
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                        if (Loot.size() <= 1) {
-//                            Loot.add(Loot.get(0));
-//                        }
                         multiPath.add(Loot);
                         loot = multiPath;
                     } else if (div == 1) {
@@ -664,7 +648,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             //아이콘 지정
             marker.setIcon(OverlayImage.fromResource(resourceID));
             //마커의 투명도
-            marker.setAlpha(0.8f);
+            marker.setAlpha(1f);
             //마커 위치
             marker.setPosition(Loc);
             //마커 우선순위

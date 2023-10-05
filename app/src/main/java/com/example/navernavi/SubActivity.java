@@ -46,14 +46,14 @@ public class SubActivity extends AppCompatActivity {
         });
 
         // 맵 버튼
-        Button pageTransBtn = (Button) findViewById(R.id.btnMap);
-        pageTransBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(),MainActivity.class);
-                startActivity(intent);
-            }
-        });
+//        Button pageTransBtn = (Button) findViewById(R.id.btnMap);
+//        pageTransBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(getApplicationContext(),MainActivity.class);
+//                startActivity(intent);
+//            }
+//        });
 
 
     }

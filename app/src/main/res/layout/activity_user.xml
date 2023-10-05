@@ -4,41 +4,45 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/light_orange"
+    android:background="@color/light_gray"
     tools:context=".UserActivity">
 
-    <ScrollView
-        android:id="@+id/scrollLayout"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:orientation="vertical"
+        android:layout_height="match_parent">
 
-
-        <LinearLayout
-            android:id="@+id/scrLayout"
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            tools:ignore="MissingConstraints">
+            android:layout_height="30dp"
+            app:cardBackgroundColor="@color/skyblue"/>
 
-            <TextView
-                android:id="@+id/isnull"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:text="저장된 경로가 존재하지 않음"
-                android:textColor="@color/white"
-                android:textSize="10pt"
-                android:visibility="invisible"
-                tools:ignore="MissingConstraints" />
-        </LinearLayout>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <LinearLayout
+                android:id="@+id/scrLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                tools:ignore="MissingConstraints">
 
-
-    </ScrollView>
+                <TextView
+                    android:id="@+id/isnull"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginVertical="350dp"
+                    android:gravity="center"
+                    android:text="저장된 경로가 존재하지 않음"
+                    android:textColor="@color/black"
+                    android:textSize="10pt"
+                    android:textStyle="bold"
+                    android:visibility="visible"
+                    tools:ignore="MissingConstraints" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

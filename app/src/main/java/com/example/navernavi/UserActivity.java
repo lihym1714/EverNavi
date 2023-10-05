@@ -1,6 +1,9 @@
 package com.example.navernavi;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.WindowDecorActionBar;
+import androidx.navigation.ui.AppBarConfiguration;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,19 +13,20 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
+import com.naver.maps.geometry.LatLng;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 
 public class UserActivity extends AppCompatActivity {
@@ -34,10 +38,9 @@ public class UserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
+
+
         listUp();
-
-
-
         // 북마크 추가 버튼
         Button plusBtn = (Button) findViewById(R.id.btnPlus);
         plusBtn.setOnClickListener(new View.OnClickListener() {
@@ -76,6 +79,11 @@ public class UserActivity extends AppCompatActivity {
         ArrayList<UserSub> userSub = new ArrayList<>();
         String runtime;
 
+        if (key>0) {
+            TextView isnull = (TextView) findViewById(R.id.isnull);
+            isnull.setVisibility(View.GONE);
+        }
+
         for(int i = 0;key > i; i++) {
             try {
                 categoriesSub.add(new Sub_category(getApplicationContext()));
@@ -99,7 +107,7 @@ public class UserActivity extends AppCompatActivity {
                     TextView SubName = (TextView) userSub.get(j).findViewById(R.id.bmName);
                     TextView SubTime = (TextView) userSub.get(j).findViewById(R.id.bmTime);
                     TextView wayPTxt = (TextView) userSub.get(j).findViewById(R.id.waypointText);
-                    SubName.setText(SP2.split(":")[0]);
+                    SubName.setText("경로명 : "+SP2.split(":")[0]);
                     final String[] wayPointTmp = new String[1];
                     final Runnable runnable = new Runnable() {
                         @Override
@@ -111,8 +119,8 @@ public class UserActivity extends AppCompatActivity {
                     class NewRunnable implements Runnable {
                         @Override
                         public void run() {
-                            String[] Dep = requestGeocode(dep.getText().toString()).split(",");
-                            String[] Arv = requestGeocode(arv.getText().toString()).split(",");
+                            String[] Dep = requestKeyword(dep.getText().toString()).split(",");
+                            String[] Arv = requestKeyword(arv.getText().toString()).split(",");
                             String waypoints = "";
                             try {
                                 if(SP2.split(":")[3].length() > 0) waypoints = SP2.split(":")[3];
@@ -125,7 +133,7 @@ public class UserActivity extends AppCompatActivity {
                     Thread thread = new Thread(new NewRunnable());
                     thread.start();
                 }
-                userSubList.add(userSub);
+                userSubList.add((ArrayList<UserSub>) userSub.clone());
                 userSub.clear();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -152,6 +160,24 @@ public class UserActivity extends AppCompatActivity {
                 }
             });
 
+            for(int j = 0;userSubList.get(finalI).size()>j;j++) {
+                int finalJ = j;
+                Button sublootGen = (Button)userSubList.get(i).get(j).findViewById(R.id.SubLootgen);
+                sublootGen.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        try {
+                            Intent intent = new Intent(UserActivity.this,MainActivity.class);
+                            String input = "viewLootOnly:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString()+":"+finalJ;
+                            intent.putExtra("key",input);
+                            startActivity(intent);
+                        }catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+
             Button catPlus = (Button)categoriesSub.get(i).findViewById(R.id.catPlus);
             catPlus.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -171,11 +197,9 @@ public class UserActivity extends AppCompatActivity {
                     LinearLayout layout = (LinearLayout) categoriesSub.get(finalI).findViewById(R.id.catlayout);
                     if (isChecked) {
                         layout.setVisibility(View.GONE);
-                        catPlus.setVisibility(View.GONE);
                         toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable2));
                     } else {
                         layout.setVisibility(View.VISIBLE);
-                        catPlus.setVisibility(View.VISIBLE);
                         toggleBtn.setBackgroundDrawable(getResources().getDrawable(R.drawable.triangle_drawable));
                     }
                 }
@@ -204,47 +228,6 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
-    public String requestReverseGc (String location) {
-        try {
-            BufferedReader bufferedReader;
-            StringBuilder stringBuilder = new StringBuilder();
-            StringBuilder result = new StringBuilder();
-
-            String query = "https://naveropenapi.apigw.ntruss.com/map-reversegeocode/v2/gc?request=coordToaddr&coords="+location+"&output=json&orders=roadaddr";
-            URL url = new URL(query);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            if (conn != null) {
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
-                conn.setDoInput(true);
-
-                int responseCode = conn.getResponseCode();
-
-                bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
-                int firstIndex = stringBuilder.indexOf("land");
-                String tmpStr = stringBuilder.substring(firstIndex);
-
-                result.append(tmpStr.substring(tmpStr.indexOf("name")+7,tmpStr.indexOf("coords")-3)).append(" ");
-                result.append(tmpStr.substring(tmpStr.indexOf("number1")+9,tmpStr.indexOf("number2")).replaceAll("[^0-9]", ""));
-                if (tmpStr.substring(tmpStr.indexOf("number2")+9,tmpStr.indexOf("addition0")).replaceAll("[^0-9]", "").length() > 0) {
-                    result.append("-").append(tmpStr.substring(tmpStr.indexOf("number2") + 9, tmpStr.indexOf("addition0")).replaceAll("[^0-9]", ""));
-                }
-
-                return result.toString();
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     public String requestDirect(String depart, String arrival, String waypoints) {
         try {
@@ -295,19 +278,19 @@ public class UserActivity extends AppCompatActivity {
         }
         return "Failed";
     }
-    private String requestGeocode(String addr) {
+    private String requestKeyword(String addr) {
         try {
             BufferedReader bufferedReader;
             StringBuilder stringBuilder = new StringBuilder();
-            String query = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query= " + URLEncoder.encode(addr, "UTF-8");
+            String query = "https://dapi.kakao.com/v2/local/search/keyword.json?page=1&size=1&sort=accuracy&query=" + URLEncoder.encode(addr, "UTF-8");
             URL url = new URL(query);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
             if (conn != null) {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("Authorization", "KakaoAK 85866fd056ceefc6ea65b49fbfd5fe75");
                 conn.setDoInput(true);
 
                 int responseCode = conn.getResponseCode();
@@ -321,23 +304,16 @@ public class UserActivity extends AppCompatActivity {
                         stringBuilder.append(line).append("\n");
                     }
 
-                    int indexFirst;
-                    int indexLast;
-
-                    indexFirst = stringBuilder.indexOf("\"x\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"y\":");
-                    String x = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    indexFirst = stringBuilder.indexOf("\"y\":\"");
-                    indexLast = stringBuilder.indexOf("\",\"distance\":");
-                    String y = stringBuilder.substring(indexFirst + 5, indexLast);
-
-                    return (Double.parseDouble(y)+","+Double.parseDouble(x));
+                    int index = stringBuilder.indexOf("x")+3;
+                    String  x = stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", "");
+                    index = index + 22;
+                    String y = stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", "");
+                    return y+","+x;
                 }
             }
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
         }
-        return addr;
+        return "";
     }
 }
