@@ -9,8 +9,9 @@
 
 
     <LinearLayout
+        android:id="@+id/SubCatLayout"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:layout_marginHorizontal="10dp"
         android:orientation="horizontal"
         android:background="@drawable/cat_drawable1"
@@ -20,14 +21,15 @@
 
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:paddingHorizontal="10dp"
+            android:layout_gravity="center"
             android:orientation="vertical">
 
             <android.widget.Button
                 android:id="@+id/catButton"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_marginHorizontal="10dp"
                 android:background="@drawable/button_drawable2"
@@ -37,6 +39,7 @@
                 android:textSize="12pt"
                 android:textStyle="bold"
                 android:typeface="normal"
+                android:singleLine="true"
                 tools:ignore="InvalidId" />
             <View
                 android:layout_width="match_parent"
@@ -47,7 +50,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingVertical="5dp"
-                android:layout_gravity="center">
+                android:gravity="center"
+                android:layout_gravity="start">
                 <TextView
                     android:id="@+id/deptext"
                     android:layout_width="wrap_content"
@@ -95,10 +99,10 @@
 
             <android.widget.Button
                 android:id="@+id/catPlus"
-                android:layout_width="50dp"
+                android:layout_width="60dp"
                 android:layout_height="30dp"
                 android:background="@drawable/button_drawable5"
-                android:text="추가"
+                android:text="경로추가"
                 android:textColor="@color/white"
                 android:visibility="visible" />
             <View

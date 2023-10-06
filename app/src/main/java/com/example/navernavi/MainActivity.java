@@ -343,13 +343,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        naverMap.setLiteModeEnabled(true);
         //건물 표시
         naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
-
-        if(!isView) {
-            naverMap.setOnMapClickListener((pointF, latLng) -> {
+        naverMap.setOnMapClickListener((pointF, latLng) -> {
+            EditText searchbar = (EditText)findViewById(R.id.editTextSearch);
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(searchbar.getWindowToken(),0);
+            searchbar.clearFocus();
+            if(!isView) {
                 tmpLoc = latLng;
                 setMark(marker, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-            });
-        }
+            }
+        });
+
     }
 
     private void requestKeyword() {
@@ -629,7 +633,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
             path.setCoordParts(Loot);
-
             path.setWidth(15);
             path.setOutlineWidth(5);
             path.setColorParts(colorParts);
@@ -687,7 +690,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         SharedPreferences sharedPreferences = getSharedPreferences(intentText.split(":")[1], MODE_PRIVATE);
 
         String key = String.valueOf(sharedPreferences.getAll().size());
-
+        for(int i = 0;sharedPreferences.getAll().size()>i;i++) {
+            if(!sharedPreferences.contains(i+"")) {
+                key = i+"";
+            }
+        }
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(key,save);
         editor.commit();

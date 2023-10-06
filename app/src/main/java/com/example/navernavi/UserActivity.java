@@ -1,15 +1,18 @@
 package com.example.navernavi;
 
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.WindowDecorActionBar;
 import androidx.navigation.ui.AppBarConfiguration;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -38,7 +41,6 @@ public class UserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
-
 
         listUp();
         // 북마크 추가 버튼
@@ -77,13 +79,13 @@ public class UserActivity extends AppCompatActivity {
         ArrayList<Sub_category> categoriesSub = new ArrayList<>();
         ArrayList<ArrayList<UserSub>> userSubList = new ArrayList<>();
         ArrayList<UserSub> userSub = new ArrayList<>();
-        String runtime;
 
         if (key>0) {
             TextView isnull = (TextView) findViewById(R.id.isnull);
             isnull.setVisibility(View.GONE);
+            Button plutBtn = (Button) findViewById(R.id.btnPlus);
         }
-
+        int tmpI=0;
         for(int i = 0;key > i; i++) {
             try {
                 categoriesSub.add(new Sub_category(getApplicationContext()));
@@ -92,18 +94,22 @@ public class UserActivity extends AppCompatActivity {
                 TextView dep = (TextView) categoriesSub.get(i).findViewById(R.id.deptext);
                 TextView arv = (TextView) categoriesSub.get(i).findViewById(R.id.arvtext);
 
-                String SP = sharedPreferences.getString(i+"","").toString();
+                if(!sharedPreferences.getAll().keySet().contains(i+"")) {++tmpI;}
+
+                String SP = sharedPreferences.getString((i+tmpI)+"","").toString();
                 btn.setText(SP.split(":")[0]);
                 dep.setText(SP.split(":")[1]);
                 arv.setText(SP.split(":")[2]);
 
                 SharedPreferences loot = getSharedPreferences(SP.split(":")[0],MODE_PRIVATE);
                 LinearLayout layout = (LinearLayout) categoriesSub.get(i).findViewById(R.id.catlayout);
+                int tmpJ = 0;
                 for(int j = 0;loot.getAll().size()>j;j++) {
                     userSub.add(new UserSub(getApplicationContext()));
                     layout.addView(userSub.get(j));
+                    if(!loot.getAll().keySet().contains(j+"")) {++tmpJ;}
 
-                    String SP2 = loot.getString(j+"","");
+                    String SP2 = loot.getString((j+tmpJ)+"","");
                     TextView SubName = (TextView) userSub.get(j).findViewById(R.id.bmName);
                     TextView SubTime = (TextView) userSub.get(j).findViewById(R.id.bmTime);
                     TextView wayPTxt = (TextView) userSub.get(j).findViewById(R.id.waypointText);
@@ -140,6 +146,7 @@ public class UserActivity extends AppCompatActivity {
             }
         }
 
+        tmpI = 0;
         for(int i = 0;categoriesSub.size()>i;i++) {
             final int finalI = i;
             Button lootGen = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
@@ -159,21 +166,83 @@ public class UserActivity extends AppCompatActivity {
                     }
                 }
             });
+            SharedPreferences Sp = getSharedPreferences("Category",MODE_PRIVATE);
+            SharedPreferences Sp2 = getSharedPreferences(name.getText().toString(),MODE_PRIVATE);
+            if(!Sp.getAll().keySet().contains(i+"")) {++tmpI;}
+            int finalTmpI = tmpI;
+            LinearLayout SubCatLayout = (LinearLayout)categoriesSub.get(i).findViewById(R.id.SubCatLayout);
+            SubCatLayout.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    AlertDialog.Builder ad = new AlertDialog.Builder(UserActivity.this);
+                    ad.setTitle("삭제");
+                    ad.setMessage("해당 경로 묶음을 삭제하시겠습니까?");
+                    ad.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            SharedPreferences.Editor editor = Sp.edit();
+                            SharedPreferences.Editor editor1 = Sp2.edit();
+                            editor1.clear();
+                            editor1.commit();
+                            editor.remove((finalTmpI+finalI)+"");
+                            editor.commit();
+                            Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
 
+                        }
+                    });
+                    ad.show();
+                    return true;
+                }
+            });
+
+            int tmpJ = 0;
             for(int j = 0;userSubList.get(finalI).size()>j;j++) {
                 int finalJ = j;
+                if(!Sp2.getAll().keySet().contains(j+"")) {++tmpJ;}
                 Button sublootGen = (Button)userSubList.get(i).get(j).findViewById(R.id.SubLootgen);
+                int finalTmpJ = tmpJ;
                 sublootGen.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         try {
                             Intent intent = new Intent(UserActivity.this,MainActivity.class);
-                            String input = "viewLootOnly:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString()+":"+finalJ;
+                            String input = "viewLootOnly:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString()+":"+(finalJ+finalTmpJ);
                             intent.putExtra("key",input);
                             startActivity(intent);
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
+                    }
+                });
+                LinearLayout UserSubLayout = (LinearLayout) userSubList.get(i).get(j).findViewById(R.id.userSubLayout);
+                UserSubLayout.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        AlertDialog.Builder ad = new AlertDialog.Builder(UserActivity.this);
+                        ad.setTitle("삭제");
+                        ad.setMessage("해당 경로를 삭제하시겠습니까?");
+                        ad.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                SharedPreferences.Editor editor = Sp2.edit();
+                                editor.remove((finalTmpJ+finalJ)+"");
+                                editor.commit();
+                                Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        });
+                        ad.show();
+                        return true;
                     }
                 });
             }
@@ -205,6 +274,7 @@ public class UserActivity extends AppCompatActivity {
                 }
             });
         }
+
 
     }
 
