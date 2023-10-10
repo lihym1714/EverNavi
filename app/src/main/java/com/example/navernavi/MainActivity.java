@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,6 +27,7 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraUpdate;
@@ -56,23 +58,22 @@ import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    private static final String TAG="MainActivity";
+
     private static NaverMap naverMap;
-    private final Marker marker = new Marker();
     private final Marker markerDep = new Marker();
     private final Marker markerArv = new Marker();
-    private final Marker wayP1 = new Marker();
-    private final Marker wayP2 = new Marker();
-    private final Marker wayP3 = new Marker();
-    private final Marker wayP4 = new Marker();
-    private final Marker wayP5 = new Marker();
+    private ArrayList<Marker> markerSet = new ArrayList<>();
     private boolean isView = false;
-    List<List<LatLng>> loot;
-    List<Integer> Congestion = new ArrayList<>();
+    private List<List<LatLng>> loot;
+    private List<Integer> Congestion = new ArrayList<>();
+    private ArrayList<WaypointEdit> WaypointList = new ArrayList<>();
+    private int focused = 5;
+    private MultipartPathOverlay path = new MultipartPathOverlay();
 
     private double depX, depY, arvX, arvY;
     private LatLng depart,arrival, tmpLoc;
     private String intentText;
-    private final ArrayList<LatLng> wayPoints = new ArrayList<>();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
 
@@ -89,7 +90,83 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
-        cardBar2.setVisibility(View.INVISIBLE);
+//        cardBar2.setVisibility(View.INVISIBLE);
+
+        //경유지 추가를 위한 EditText파트
+        LinearLayout WaypointEditLayout = (LinearLayout)findViewById(R.id.cardViewEdit);
+        Button AddWaypointBtn = (Button)findViewById(R.id.AddWaypointBtn);
+        AddWaypointBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    if (5 > WaypointList.size()) {
+                        if (WaypointList.isEmpty()) {
+                            WaypointList.add(new WaypointEdit(getApplicationContext()));
+                            WaypointEditLayout.addView(WaypointList.get(WaypointList.size() - 1));
+                            markerSet.add(new Marker());
+                        }else if (markerSet.size() > 0) {
+                            if (markerSet.get(markerSet.size() - 1).isAdded())
+                                WaypointList.add(new WaypointEdit(getApplicationContext()));
+                            WaypointEditLayout.addView(WaypointList.get(WaypointList.size() - 1));
+                            markerSet.add(new Marker());
+                        }
+                    }
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+                for(int i = 0;WaypointList.size()>i;i++) {
+                    int finalI = i;
+                    EditText searchbar = (EditText) WaypointList.get(i).findViewById(R.id.WayPointEdit);
+                    Button btnDel = (Button) WaypointList.get(i).findViewById(R.id.waypDeleteBtn);
+
+
+                    btnDel.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+//                            Log.d(TAG,"asdasdasd");
+                            WaypointList.remove(finalI);
+                            WaypointEditLayout.removeViewAt(finalI);
+                            markerSet.get(finalI).setMap(null);
+                            markerSet.remove(finalI);
+                            focused = 5;
+                        }
+                    });
+                    EditText searchBar = (EditText)WaypointList.get(i).findViewById(R.id.WayPointEdit);
+                    try {
+                        searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                        searchBar.setOnEditorActionListener((View, actionId, event) -> {
+                            if(searchBar.length() > 0) {
+                                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                                    final Runnable runnable = new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            InputMethodManager imm;
+                                            imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                                            imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+//                                            searchBar.clearFocus();
+                                            setMark(markerSet.get(finalI), new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
+                                            focused = finalI;
+                                        }
+                                    };
+                                    new Thread(() -> {
+                                        requestKeyword(searchbar.getText().toString());
+                                        if (tmpLoc != null) {
+                                            cameraSet(tmpLoc, 0);
+                                            mHandler.post(runnable);
+                                        }
+                                    }).start();
+                                } else {
+                                    Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                            return false;
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
 
         Intent userIntent = getIntent();
@@ -130,86 +207,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
 
-        Spinner spinner = (Spinner)findViewById(R.id.spinner);
-        String[] items = {"Trafast","Traoptional"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,items);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        spinner.setAdapter(adapter);
-
-        int verticalOffset = Math.round(getApplicationContext().getResources().getDisplayMetrics().density * 30);
-        spinner.setDropDownVerticalOffset(verticalOffset);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-
-
-        EditText searchBar = (EditText)findViewById(R.id.editTextSearch);
-        try {
-            searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
-            searchBar.setOnEditorActionListener((v, actionId, event) -> {
-                if(searchBar.length() > 0) {
-                    if (actionId == EditorInfo.IME_ACTION_DONE) {
-                        final Runnable runnable = new Runnable() {
-                            @Override
-                            public void run() {
-                                InputMethodManager imm;
-                                imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                                imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-                                searchBar.clearFocus();
-                                setMark(marker, new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-                            }
-                        };
-                          new Thread(() -> {
-                              requestKeyword();
-                              if (tmpLoc != null) {
-                                  cameraSet(tmpLoc, 0);
-                                  mHandler.post(runnable);
-                              }
-                          }).start();
-                    } else {
-                        Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
-                    }
-                }
-                return false;
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Button WaypBtn = (Button) findViewById(R.id.btnWay);
-        WaypBtn.setOnClickListener(view -> {
-            try {
-                if(tmpLoc != null) {
-                    if (1 > wayPoints.size()) {setMark(wayP1, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                    else if (2 > wayPoints.size()) {setMark(wayP2, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                    else if (3 > wayPoints.size()) {setMark(wayP3, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                    else if (4 > wayPoints.size()) {setMark(wayP4, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                    else if (5 > wayPoints.size()) {setMark(wayP5, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_gray);}
-                    wayPoints.add(tmpLoc);
-                    marker.setMap(null);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-
         Button lootBtn = (Button) findViewById(R.id.lootGen);
+
         lootBtn.setOnClickListener(view -> {
+            String waypoint = "";
+            for(int i = 0;WaypointList.size()>i;i++) {
+                LatLng latLng = markerSet.get(i).getPosition();
+                waypoint += latLng.longitude+","+latLng.latitude+"|";
+            }
+            String finalWaypoint = waypoint;
             final Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
                     if (loot != null) {
+                        path.setMap(null);
                         isView=true;
                         cardBar2.setVisibility(View.VISIBLE);
-                        searchBar.setVisibility(View.INVISIBLE);
-                        drawPath(loot);
+                        drawPath(loot,1);
                     }
                 }
             };
@@ -224,12 +238,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             depX = depart.latitude;
                             depY = depart.longitude;
                         }
-                        requestDirect(0, depY + "," + depX, arvY + "," + arvX,"");
-                        requestDirect(1, depY + "," + depX, arvY + "," + arvX,"");
+
+                        requestDirect(0, depY + "," + depX, arvY + "," + arvX, finalWaypoint);
+//                        requestDirect(1, depY + "," + depX, arvY + "," + arvX,"");
                         LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
                         mHandler.post(runnable);
                         cameraSet(avgLoc,2);
-                    } catch (Exception e) {e.printStackTrace();}
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             Thread thread = new Thread(new NewRunnable());
@@ -259,6 +276,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             sharedPref(et.getText().toString());
                             dialog.dismiss();
                             Toast.makeText(getApplicationContext(),"\""+ et.getText().toString()+"\" 경로가 저장되었습니다",Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(MainActivity.this,UserActivity.class);
+                            startActivity(intent);
                         } else {
                             Toast.makeText(getApplicationContext(),"경로명을 입력해주세요",Toast.LENGTH_SHORT).show();
                         }
@@ -279,11 +298,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
             String[] lootString = lootShared.getString(text.split(":")[4]+"","").split(":");
             lootGenLayout.setVisibility(View.GONE);
+            cardBar2.setVisibility(View.GONE);
             isView = true;
             final Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    drawPath(loot);
+                    drawPath(loot,1);
                 }
             };
             new Thread(() -> {
@@ -299,6 +319,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         else if(text.split(":")[0].contains("viewLoot")) {
             lootGenLayout.setVisibility(View.GONE);
+            cardBar2.setVisibility(View.GONE);
             isView = true;
             try {
                 SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
@@ -308,7 +329,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     final Runnable runnable = new Runnable() {
                         @Override
                         public void run() {
-                            drawPath(loot);
+                            drawPath(loot,0);
                         }
                     };
                     new Thread(() -> {
@@ -344,60 +365,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //건물 표시
         naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
         naverMap.setOnMapClickListener((pointF, latLng) -> {
-            EditText searchbar = (EditText)findViewById(R.id.editTextSearch);
-            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(searchbar.getWindowToken(),0);
-            searchbar.clearFocus();
             if(!isView) {
                 tmpLoc = latLng;
-                setMark(marker, tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-            }
-        });
-
-    }
-
-    private void requestKeyword() {
-        try {
-            EditText searchBar;
-            searchBar = findViewById(R.id.editTextSearch);
-
-            BufferedReader bufferedReader;
-            StringBuilder stringBuilder = new StringBuilder();
-            String addr = searchBar.getText().toString();
-            String query = "https://dapi.kakao.com/v2/local/search/keyword.json?page=1&size=1&sort=accuracy&query=" + URLEncoder.encode(addr, "UTF-8");
-            URL url = new URL(query);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-            if (conn != null) {
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "KakaoAK 85866fd056ceefc6ea65b49fbfd5fe75");
-                conn.setDoInput(true);
-
-                int responseCode = conn.getResponseCode();
-
-                if (responseCode == 200) { //200 = OK , 400 = INVALID_REQUEST , 500 = SYSTEM ERROR
-                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        stringBuilder.append(line).append("\n");
-                    }
-
-                    int index = stringBuilder.indexOf("x")+3;
-                    double x = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
-                    index = index + 22;
-                    double y = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
-                    tmpLoc = new LatLng(y,x);
-                    bufferedReader.close();
-                    conn.disconnect();
+                if (5>focused) {
+                    setMark(markerSet.get(focused), tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
                 }
             }
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
     }
 
     private void requestKeyword(String addr) {
@@ -450,13 +424,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             String[] option = {"trafast","tracomfort","traoptimal","traavoidtoll","traavoidcaronly"};
             StringBuilder query = new StringBuilder("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving?start=" + Depart + "&goal=" + Arrival);
             query.append("&").append(option[0]);
-            if(wayPoints.size() > 0 && waypoints == "") {
-                query.append("&waypoints=");
-                for(int i = 0;wayPoints.size()>i;i++) {
-                    String wayP = wayPoints.get(i).longitude + "," + wayPoints.get(i).latitude;
-                    query.append(wayP).append("|");
-                }
-            } else {query.append("&waypoints="+waypoints);}
+            if(!waypoints.equals("")) {
+                query.append("&waypoints=").append(waypoints);
+            }
             URL url = new URL(query.toString());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             if (conn != null) {
@@ -616,9 +586,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void drawPath(List<List<LatLng>> Loot) {
+    private void drawPath(List<List<LatLng>> Loot, int clear) {
         try {
-            MultipartPathOverlay path = new MultipartPathOverlay();
+            if(clear == 0) {path = new MultipartPathOverlay();}
             path.setCoordParts(Loot);
             path.setPatternImage(OverlayImage.fromResource(R.drawable.triangle_drawable_path));
             List colorParts = new ArrayList<Color>();
@@ -682,8 +652,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         data.append(name).append(":");
         data.append(depY+","+depX).append(":");
         data.append(arvY+","+arvX).append(":");
-        for(int i = 0;wayPoints.size()>i;i++) {
-            data.append(wayPoints.get(i).longitude+","+wayPoints.get(i).latitude).append("|");
+        for(int i = 0;markerSet.size()>i;i++) {
+            data.append(markerSet.get(i).getPosition().longitude+","+markerSet.get(i).getPosition().latitude).append("|");
         }
         String save = data.toString();
 

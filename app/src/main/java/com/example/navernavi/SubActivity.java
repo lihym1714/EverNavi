@@ -45,6 +45,8 @@ public class SubActivity extends AppCompatActivity {
                     editor.putString(key,input.toString());
                     editor.commit();
                     Toast.makeText(getApplicationContext(),"새로운 경로 카테고리가 생성되었습니다",Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(SubActivity.this,UserActivity.class);
+                    startActivity(intent);
                     finish();
                 } else {
                     Toast.makeText(getApplicationContext(),"빈 칸 없이 모두 입력해주세요",Toast.LENGTH_SHORT).show();

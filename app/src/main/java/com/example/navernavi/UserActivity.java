@@ -176,7 +176,7 @@ public class UserActivity extends AppCompatActivity {
                 public boolean onLongClick(View v) {
                     AlertDialog.Builder ad = new AlertDialog.Builder(UserActivity.this);
                     ad.setTitle("삭제");
-                    ad.setMessage("해당 경로 묶음을 삭제하시겠습니까?");
+                    ad.setMessage("해당 경로 카테고리를 삭제하시겠습니까?");
                     ad.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -186,6 +186,7 @@ public class UserActivity extends AppCompatActivity {
                             editor1.commit();
                             editor.remove((finalTmpI+finalI)+"");
                             editor.commit();
+                            SubCatLayout.removeViewAt(finalI+finalTmpI);
                             Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -229,9 +230,11 @@ public class UserActivity extends AppCompatActivity {
                         ad.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
+//                                UserSubLayout.removeViewAt(finalJ);
                                 SharedPreferences.Editor editor = Sp2.edit();
                                 editor.remove((finalTmpJ+finalJ)+"");
                                 editor.commit();
+                                UserSubLayout.removeViewAt(finalJ+finalTmpJ);
                                 Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
                             }
                         });
