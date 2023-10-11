@@ -1,28 +1,27 @@
 package com.example.navernavi;
 
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.WindowDecorActionBar;
-import androidx.navigation.ui.AppBarConfiguration;
+import androidx.core.content.ContextCompat;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.naver.maps.geometry.LatLng;
+import com.skydoves.balloon.ArrowOrientation;
+import com.skydoves.balloon.Balloon;
+import com.skydoves.balloon.BalloonAnimation;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -30,6 +29,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+
 
 
 public class UserActivity extends AppCompatActivity {
@@ -68,6 +68,33 @@ public class UserActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);//인텐트 효과 없애기
             }
         });
+
+
+
+        Button information = (Button) findViewById(R.id.BtnInfo);
+        information.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Balloon balloon = new Balloon.Builder(getApplicationContext())
+                        .setArrowSize(10)
+                        .setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.skyblue))
+                        .setTextColor(Color.WHITE)
+                        .setArrowOrientation(ArrowOrientation.TOP)
+                        .setArrowPosition(0.9f)
+                        .setArrowVisible(true)
+                        .setWidthRatio(0.5f)
+                        .setHeight(65)
+                        .setTextSize(14f)
+                        .setCornerRadius(4f)
+                        .setAlpha(0.9f)
+                        .setText("박스를 길게 누르면 경로 삭제가 가능합니다")
+                        .setAutoDismissDuration(2500L)
+                        .setBalloonAnimation(BalloonAnimation.FADE)
+                        .build();
+                balloon.showAlignBottom(information);
+            }
+        });
+
     }
 
     private void listUp() {
@@ -186,8 +213,8 @@ public class UserActivity extends AppCompatActivity {
                             editor1.commit();
                             editor.remove((finalTmpI+finalI)+"");
                             editor.commit();
-                            SubCatLayout.removeViewAt(finalI+finalTmpI);
                             Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
+                            scr_layout.removeView(categoriesSub.get(finalI));
                         }
                     });
                     ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -230,11 +257,12 @@ public class UserActivity extends AppCompatActivity {
                         ad.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-//                                UserSubLayout.removeViewAt(finalJ);
+                                LinearLayout layout = (LinearLayout) categoriesSub.get(finalI).findViewById(R.id.catlayout);
                                 SharedPreferences.Editor editor = Sp2.edit();
                                 editor.remove((finalTmpJ+finalJ)+"");
                                 editor.commit();
-                                UserSubLayout.removeViewAt(finalJ+finalTmpJ);
+                                layout.removeView(userSubList.get(finalI).get(finalJ));
+
                                 Toast.makeText(getApplicationContext(),"경로가 삭제되었습니다.",Toast.LENGTH_SHORT).show();
                             }
                         });

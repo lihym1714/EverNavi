@@ -5,30 +5,27 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.PixelFormat;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
+import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
 
+import com.example.navernavi.retrofit.AddrSearchRepository;
+import com.example.navernavi.retrofit.Location;
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.LocationTrackingMode;
@@ -47,13 +44,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import retrofit2.Retrofit;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -123,7 +116,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     btnDel.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-//                            Log.d(TAG,"asdasdasd");
                             WaypointList.remove(finalI);
                             WaypointEditLayout.removeViewAt(finalI);
                             markerSet.get(finalI).setMap(null);
@@ -136,29 +128,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         searchBar.setImeOptions(EditorInfo.IME_ACTION_DONE);
                         searchBar.setOnEditorActionListener((View, actionId, event) -> {
                             if(searchBar.length() > 0) {
-                                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                                    final Runnable runnable = new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            InputMethodManager imm;
-                                            imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                                            imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-//                                            searchBar.clearFocus();
-                                            setMark(markerSet.get(finalI), new LatLng(tmpLoc.latitude, tmpLoc.longitude), com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
-                                            focused = finalI;
-                                        }
-                                    };
-                                    new Thread(() -> {
-                                        requestKeyword(searchbar.getText().toString());
-                                        if (tmpLoc != null) {
-                                            cameraSet(tmpLoc, 0);
-                                            mHandler.post(runnable);
-                                        }
-                                    }).start();
+                                try {
+                                    request(searchBar.getText().toString(),0);
+                                    InputMethodManager imm;
+                                    imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                                    imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+                                    searchBar.clearFocus();
+                                }catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 } else {
                                     Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
                                 }
-                            }
+
                             return false;
                         });
                     } catch (Exception e) {
@@ -179,36 +161,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LinearLayout lootGenLayout = (LinearLayout) findViewById(R.id.lootGenLayout);
 
         if(true) {
-            final Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    if (!markerDep.isAdded()) {
-                        depY = tmpLoc.longitude; depX = tmpLoc.latitude;
-                        depart = new LatLng(depX,depY);
-                        setMark(markerDep, new LatLng(depX, depY), com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
-                    }
-                    else {
-                        arvY = tmpLoc.longitude; arvX = tmpLoc.latitude;
-                        setMark(markerArv, new LatLng(arvX, arvY), com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
-                        cameraSet(new LatLng((depX+arvX)/2,(depY+arvY)/2),2);
-                    }
-                }
-            };
-            new Thread(() -> {
-                requestKeyword(text.split(":")[2]);
-                if (tmpLoc != null) {
-                    mHandler.post(runnable);
-                }
-                requestKeyword(text.split(":")[3]);
-                if (tmpLoc != null) {
-                    mHandler.post(runnable);
-                }
-            }).start();
+            request(text.split(":")[2],1);
         }
 
 
-        Button lootBtn = (Button) findViewById(R.id.lootGen);
 
+        Button lootBtn = (Button) findViewById(R.id.lootGen);
         lootBtn.setOnClickListener(view -> {
             String waypoint = "";
             for(int i = 0;WaypointList.size()>i;i++) {
@@ -360,8 +318,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setLocationTrackingMode(LocationTrackingMode.None);
         //배경 지도 선택
         naverMap.setMapType(NaverMap.MapType.Navi);
-//        naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_TRAFFIC,true);
-//        naverMap.setLiteModeEnabled(true);
         //건물 표시
         naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
         naverMap.setOnMapClickListener((pointF, latLng) -> {
@@ -373,47 +329,60 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
     }
+    public void request(String addr,int div) {
+        int size = 10; if (div != 0) size = 1;
+        AddrSearchRepository.getINSTANCE().getAddressList(addr, 1, size, new AddrSearchRepository.AddressResponseListener() {
+            @Override
+            public void onSuccessResponse(Location locationData) {
 
-    private void requestKeyword(String addr) {
-        try {
-            BufferedReader bufferedReader;
-            StringBuilder stringBuilder = new StringBuilder();
-            String query = "https://dapi.kakao.com/v2/local/search/keyword.json?page=1&size=1&sort=accuracy&query=" + URLEncoder.encode(addr, "UTF-8");
-            URL url = new URL(query);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                if (div == 0) {
+                    try {
+                        List<Location.Document> documents = locationData.documentsList;
+                        ScrollView scrollView = (ScrollView) findViewById(R.id.content);
+                        ArrayList<Place> placeList = new ArrayList<>();
 
-            if (conn != null) {
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "KakaoAK 85866fd056ceefc6ea65b49fbfd5fe75");
-                conn.setDoInput(true);
+                        for(int i = 0;documents.size()>i;i++) {
+                            placeList.add(new Place(getApplicationContext()));
+                            scrollView.addView(placeList.get(i));
 
-                int responseCode = conn.getResponseCode();
+                            TextView placeName = (TextView) placeList.get(i).findViewById(R.id.placeName);
+                            TextView placeAddr = (TextView) placeList.get(i).findViewById(R.id.placeAddr);
+                            TextView placeType = (TextView) placeList.get(i).findViewById(R.id.placeType);
+                            TextView placeDistance = (TextView) placeList.get(i).findViewById(R.id.placeDistance);
+                            LinearLayout place = (LinearLayout) placeList.get(i).findViewById(R.id.userSubLayout);
 
-                if (responseCode == 200) { //200 = OK , 400 = INVALID_REQUEST , 500 = SYSTEM ERROR
-                    bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        stringBuilder.append(line).append("\n");
+                            placeName.setText(documents.get(i).getPlace_name());
+                            placeAddr.setText(documents.get(i).getAddress_name());
+                            String type[] = documents.get(i).getCategory_name().toString().split(">");
+                            placeType.setText(type[type.length-1]);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-
-                    int index = stringBuilder.indexOf("x")+3;
-                    double x = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
-                    index = index + 22;
-                    double y = Double.parseDouble(stringBuilder.substring(index,index+18).replaceAll("[^0-9.]", ""));
-                    tmpLoc = new LatLng(y,x);
-                    bufferedReader.close();
-                    conn.disconnect();
+                } else {
+                    double y = Double.parseDouble(locationData.documentsList.get(0).getX());
+                    double x = Double.parseDouble(locationData.documentsList.get(0).getY());
+                    if(!markerDep.isAdded()) {
+                        setMark(markerDep, new LatLng(x, y), com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+                        tmpLoc = new LatLng(x, y);
+                        request(intentText.split(":")[3],1);
+                    } else {
+                        setMark(markerArv, new LatLng(x, y), com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+                        cameraSet(new LatLng((tmpLoc.latitude+x)/2,(tmpLoc.longitude+y)/2),2);
+                    }
                 }
             }
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
+            @Override
+            public void onFailResponse() {
+                Toast.makeText(MainActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
+    public int distanceCalc(double depx, double depy, double arvx, double arvy) {
+
+        return 0;
+    }
 
     @SuppressLint("SetTextI18n")
     public void requestDirect(int div, String Depart, String Arrival, String waypoints) {
