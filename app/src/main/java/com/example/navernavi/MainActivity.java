@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -20,6 +21,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
+import android.widget.SlidingDrawer;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
@@ -64,11 +66,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int focused = 5;
     private MultipartPathOverlay path = new MultipartPathOverlay();
 
-    private double depX, depY, arvX, arvY;
-    private LatLng depart,arrival, tmpLoc;
+    private LatLng tmpLoc;
     private String intentText;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
+
+    private final int RedPing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_red;
+    private final int GreenPing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_green;
+    private final int BluePing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue;
 
     private  static Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -84,6 +89,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.getMapAsync(this);
         LinearLayout cardBar2 = (LinearLayout) findViewById(R.id.naviLayout);
 //        cardBar2.setVisibility(View.INVISIBLE);
+
+        SlidingDrawer slidingDrawer = (SlidingDrawer)findViewById(R.id.slidingDrawer);
+        slidingDrawer.setVisibility(View.INVISIBLE);
+
+
+
 
         //경유지 추가를 위한 EditText파트
         LinearLayout WaypointEditLayout = (LinearLayout)findViewById(R.id.cardViewEdit);
@@ -111,8 +122,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     int finalI = i;
                     EditText searchbar = (EditText) WaypointList.get(i).findViewById(R.id.WayPointEdit);
                     Button btnDel = (Button) WaypointList.get(i).findViewById(R.id.waypDeleteBtn);
-
-
                     btnDel.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -134,6 +143,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                                     imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
                                     searchBar.clearFocus();
+                                    focused = finalI;
+                                    slidingDrawer.setVisibility(android.view.View.VISIBLE);
+                                    slidingDrawer.animateOpen();
                                 }catch (Exception e) {
                                     e.printStackTrace();
                                 }
@@ -160,15 +172,46 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         intentText = text;
         LinearLayout lootGenLayout = (LinearLayout) findViewById(R.id.lootGenLayout);
 
+
         if(true) {
             request(text.split(":")[2],1);
         }
 
+        Button lootDel = (Button) findViewById(R.id.lootDel);
+        lootDel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences SP = getSharedPreferences(intentText.split(":")[1],MODE_PRIVATE);
+                SharedPreferences.Editor editor = SP.edit();
+                AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
+                ad.setTitle("경로 삭제");
+                ad.setMessage("정말로 해당 경로를 삭제하시겠습니까?");
+                ad.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        editor.remove(intentText.split(":")[4]);
+                        editor.commit();
+                        Intent intent = new Intent(MainActivity.this,UserActivity.class);
+                        startActivity(intent);
+                    }
+                });
+                ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                ad.show();
+            }
+        });
 
-
-        Button lootBtn = (Button) findViewById(R.id.lootGen);
-        lootBtn.setOnClickListener(view -> {
+        Button lootGen = (Button) findViewById(R.id.lootGen);
+        lootGen.setOnClickListener(view -> {
             String waypoint = "";
+            double depX = markerDep.getPosition().longitude;
+            double depY = markerDep.getPosition().latitude;
+            double arvX = markerArv.getPosition().longitude;
+            double arvY = markerArv.getPosition().latitude;
+
             for(int i = 0;WaypointList.size()>i;i++) {
                 LatLng latLng = markerSet.get(i).getPosition();
                 waypoint += latLng.longitude+","+latLng.latitude+"|";
@@ -179,7 +222,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 public void run() {
                     if (loot != null) {
                         path.setMap(null);
-                        isView=true;
                         cardBar2.setVisibility(View.VISIBLE);
                         drawPath(loot,1);
                     }
@@ -189,17 +231,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void run() {
                     try {
-                        if (depart == null) {
-                            depX = locationSource.getLastLocation().getLatitude();
-                            depY = locationSource.getLastLocation().getLongitude();
-                        } else {
-                            depX = depart.latitude;
-                            depY = depart.longitude;
-                        }
-
-                        requestDirect(0, depY + "," + depX, arvY + "," + arvX, finalWaypoint);
-//                        requestDirect(1, depY + "," + depX, arvY + "," + arvX,"");
-                        LatLng avgLoc = new LatLng((depX+arvX)/2,(depY+arvY)/2);
+                        requestDirect(0, depX + "," + depY, arvX + "," + arvY, finalWaypoint);
+                        LatLng avgLoc = new LatLng((depY+arvY)/2,(depX+arvX)/2);
                         mHandler.post(runnable);
                         cameraSet(avgLoc,2);
                     } catch (Exception e) {
@@ -255,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(text.split(":")[0].contains("viewLootOnly")) {
             SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
             String[] lootString = lootShared.getString(text.split(":")[4]+"","").split(":");
-            lootGenLayout.setVisibility(View.GONE);
+            lootGen.setVisibility(View.GONE);
             cardBar2.setVisibility(View.GONE);
             isView = true;
             final Runnable runnable = new Runnable() {
@@ -276,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }).start();
         }
         else if(text.split(":")[0].contains("viewLoot")) {
-            lootGenLayout.setVisibility(View.GONE);
+            lootGen.setVisibility(View.GONE);
             cardBar2.setVisibility(View.GONE);
             isView = true;
             try {
@@ -304,6 +337,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            lootDel.setVisibility(View.GONE);
         }
     }
 
@@ -315,16 +350,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setLocationSource(locationSource);
         naverMap.getUiSettings().setZoomControlEnabled(false);
         naverMap.getUiSettings().setLocationButtonEnabled(true);
-        naverMap.setLocationTrackingMode(LocationTrackingMode.None);
+        naverMap.setLocationTrackingMode(LocationTrackingMode.NoFollow);
         //배경 지도 선택
         naverMap.setMapType(NaverMap.MapType.Navi);
         //건물 표시
         naverMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BUILDING, true);
+
         naverMap.setOnMapClickListener((pointF, latLng) -> {
+            InputMethodManager imm;
+            imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if(!isView) {
                 tmpLoc = latLng;
                 if (5>focused) {
-                    setMark(markerSet.get(focused), tmpLoc, com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue);
+                    EditText searchBar = (EditText) WaypointList.get(focused).findViewById(R.id.WayPointEdit);
+                    imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
+                    if (searchBar.hasFocus()) {
+                        setMark(markerSet.get(focused), tmpLoc, BluePing);
+                    }
                 }
             }
         });
@@ -338,12 +380,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (div == 0) {
                     try {
                         List<Location.Document> documents = locationData.documentsList;
-                        ScrollView scrollView = (ScrollView) findViewById(R.id.content);
+                        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.contentLinear);
+                        linearLayout.removeAllViews();
                         ArrayList<Place> placeList = new ArrayList<>();
 
                         for(int i = 0;documents.size()>i;i++) {
                             placeList.add(new Place(getApplicationContext()));
-                            scrollView.addView(placeList.get(i));
+                            linearLayout.addView(placeList.get(i));
+                            SlidingDrawer slidingDrawer = (SlidingDrawer)findViewById(R.id.slidingDrawer);
+
 
                             TextView placeName = (TextView) placeList.get(i).findViewById(R.id.placeName);
                             TextView placeAddr = (TextView) placeList.get(i).findViewById(R.id.placeAddr);
@@ -355,6 +400,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             placeAddr.setText(documents.get(i).getAddress_name());
                             String type[] = documents.get(i).getCategory_name().toString().split(">");
                             placeType.setText(type[type.length-1]);
+
+                            double disX = markerDep.getPosition().latitude; double disY = markerDep.getPosition().longitude;
+                            if (locationSource.getLastLocation() != null) {
+                                disX = locationSource.getLastLocation().getLatitude();
+                                disY = locationSource.getLastLocation().getLongitude();
+                            }
+
+                            double distance = getDistance(
+                                    disX,
+                                    disY,
+                                    Double.parseDouble(documents.get(i).getY()),
+                                    Double.parseDouble(documents.get(i).getX())
+                            );
+                            if(distance > 0.1) {placeDistance.setText(Math.round((distance)*10)/10.0+ " km");}
+//                            placeDistance.setText(distance+"");
+
+
+                            int finalI = i;
+                            place.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    double x = Double.parseDouble(documents.get(finalI).getY());
+                                    double y = Double.parseDouble(documents.get(finalI).getX());
+                                    LatLng loc = new LatLng(x,y);
+                                    setMark(markerSet.get(focused),loc, BluePing);
+                                    slidingDrawer.animateClose();
+                                    cameraSet(loc,0);
+                                }
+                            });
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -363,11 +437,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     double y = Double.parseDouble(locationData.documentsList.get(0).getX());
                     double x = Double.parseDouble(locationData.documentsList.get(0).getY());
                     if(!markerDep.isAdded()) {
-                        setMark(markerDep, new LatLng(x, y), com.naver.maps.map.R.drawable.navermap_default_marker_icon_red);
+                        setMark(markerDep, new LatLng(x, y), RedPing);
                         tmpLoc = new LatLng(x, y);
                         request(intentText.split(":")[3],1);
                     } else {
-                        setMark(markerArv, new LatLng(x, y), com.naver.maps.map.R.drawable.navermap_default_marker_icon_green);
+                        setMark(markerArv, new LatLng(x, y), GreenPing);
                         cameraSet(new LatLng((tmpLoc.latitude+x)/2,(tmpLoc.longitude+y)/2),2);
                     }
                 }
@@ -379,10 +453,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-    public int distanceCalc(double depx, double depy, double arvx, double arvy) {
+    private Double getDistance(Double x1, Double y1, Double x2, Double y2) {
+        double distance;
+        double radius = 6371;
+        double toRadian = Math.PI/180;
 
-        return 0;
+        double deltaLatitude = Math.abs(x1 - x2) * toRadian;
+        double deltaLongitude = Math.abs(y1 - y2) * toRadian;
+
+        double sinDeltaLat = Math.sin(deltaLatitude / 2);
+        double sinDeltaLng = Math.sin(deltaLongitude / 2);
+        double squareRoot = Math.sqrt(
+                sinDeltaLat * sinDeltaLat +
+                        Math.cos(x1 * toRadian) * Math.cos(x2 * toRadian) * sinDeltaLng * sinDeltaLng);
+
+        distance = 2 * radius * Math.asin(squareRoot);
+
+        return distance;
     }
+
+
 
     @SuppressLint("SetTextI18n")
     public void requestDirect(int div, String Depart, String Arrival, String waypoints) {
@@ -402,8 +492,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", Const.Client_ID);
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", Const.Client_Secret);
                 conn.setDoInput(true);
 
                 int responseCode = conn.getResponseCode();
@@ -617,6 +707,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void sharedPref(String name) {
+        double depX = markerDep.getPosition().latitude;
+        double depY = markerDep.getPosition().longitude;
+
+        double arvX = markerArv.getPosition().latitude;
+        double arvY = markerArv.getPosition().longitude;
         StringBuilder data = new StringBuilder();
         data.append(name).append(":");
         data.append(depY+","+depX).append(":");

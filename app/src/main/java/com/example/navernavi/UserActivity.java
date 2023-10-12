@@ -345,8 +345,8 @@ public class UserActivity extends AppCompatActivity {
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", "52qqm2ev4e");
-                conn.setRequestProperty("X-NCP-APIGW-API-KEY", "xTdW0pV93xz6x9ZM948xmH4iGvpheQZwmKwx0PjM");
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY-ID", Const.Client_ID);
+                conn.setRequestProperty("X-NCP-APIGW-API-KEY", Const.Client_Secret);
                 conn.setDoInput(true);
 
                 bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));

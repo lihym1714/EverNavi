@@ -2,6 +2,8 @@ package com.example.navernavi.retrofit;
 
 import android.util.Log;
 
+import com.example.navernavi.Const;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -18,7 +20,7 @@ public class AddrSearchRepository {
 
     public void getAddressList(String address, int page, int size, AddressResponseListener listener) {
         if (address != null) {
-            Call<Location> call = RetrofitNet.getRetrofit().getSearchAddrService().searchAddressList(address, page, size, "KakaoAK "+ "85866fd056ceefc6ea65b49fbfd5fe75");
+            Call<Location> call = RetrofitNet.getRetrofit().getSearchAddrService().searchAddressList(address, page, size, "KakaoAK "+Const.Kakao_RestAPIKey);
             call.enqueue(new Callback<Location>() {
                 @Override
                 public void onResponse(Call<Location> call, Response<Location> response) {
