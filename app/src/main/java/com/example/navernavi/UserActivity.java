@@ -83,17 +83,17 @@ public class UserActivity extends AppCompatActivity {
                         .setTextColor(Color.WHITE)
                         .setArrowOrientation(ArrowOrientation.TOP)
                         .setArrowPosition(0.9f)
-                        .setArrowVisible(true)
-                        .setWidthRatio(0.5f)
-                        .setHeight(65)
+                        .setArrowVisible(false)
+                        .setWidthRatio(0.8f)
+                        .setHeight(80)
                         .setTextSize(14f)
                         .setCornerRadius(4f)
                         .setAlpha(0.9f)
-                        .setText("박스를 길게 누르면 경로 삭제가 가능합니다")
+                        .setText("박스를 누르면 해당 경로를 확인할 수 있습니다.\n박스를 길게 누르면 해당 경로를 삭제할 수 있습니다.")
                         .setAutoDismissDuration(2500L)
                         .setBalloonAnimation(BalloonAnimation.FADE)
                         .build();
-                balloon.showAlignBottom(information);
+                balloon.show(v,10,10);
             }
         });
 
@@ -142,7 +142,7 @@ public class UserActivity extends AppCompatActivity {
                     TextView SubName = (TextView) userSub.get(j).findViewById(R.id.bmName);
                     TextView SubTime = (TextView) userSub.get(j).findViewById(R.id.bmTime);
                     TextView wayPTxt = (TextView) userSub.get(j).findViewById(R.id.waypointText);
-                    SubName.setText("경로명 : "+SP2.split(":")[0]);
+                    SubName.setText(SP2.split(":")[0]);
                     final String[] wayPointTmp = new String[1];
                     final Runnable runnable = new Runnable() {
                         @Override
@@ -178,11 +178,11 @@ public class UserActivity extends AppCompatActivity {
         tmpI = 0;
         for(int i = 0;categoriesSub.size()>i;i++) {
             final int finalI = i;
-            Button lootGen = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
+            LinearLayout SubCatLayout = (LinearLayout) categoriesSub.get(i).findViewById(R.id.SubCatLayout);
             Button name = (Button)categoriesSub.get(finalI).findViewById(R.id.catButton);
             TextView dep = categoriesSub.get(finalI).findViewById(R.id.deptext);
             TextView arv = categoriesSub.get(finalI).findViewById(R.id.arvtext);
-            lootGen.setOnClickListener(new View.OnClickListener() {
+            SubCatLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
@@ -199,7 +199,6 @@ public class UserActivity extends AppCompatActivity {
             SharedPreferences Sp2 = getSharedPreferences(name.getText().toString(),MODE_PRIVATE);
             if(!Sp.getAll().keySet().contains(i+"")) {++tmpI;}
             int finalTmpI = tmpI;
-            LinearLayout SubCatLayout = (LinearLayout)categoriesSub.get(i).findViewById(R.id.SubCatLayout);
             SubCatLayout.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
@@ -234,9 +233,9 @@ public class UserActivity extends AppCompatActivity {
             for(int j = 0;userSubList.get(finalI).size()>j;j++) {
                 int finalJ = j;
                 if(!Sp2.getAll().keySet().contains(j+"")) {++tmpJ;}
-                Button sublootGen = (Button)userSubList.get(i).get(j).findViewById(R.id.SubLootgen);
+                LinearLayout UserSubLayout = (LinearLayout) userSubList.get(i).get(j).findViewById(R.id.userSubLayout);
                 int finalTmpJ = tmpJ;
-                sublootGen.setOnClickListener(new View.OnClickListener() {
+                UserSubLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         try {
@@ -249,7 +248,6 @@ public class UserActivity extends AppCompatActivity {
                         }
                     }
                 });
-                LinearLayout UserSubLayout = (LinearLayout) userSubList.get(i).get(j).findViewById(R.id.userSubLayout);
                 UserSubLayout.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
@@ -270,9 +268,7 @@ public class UserActivity extends AppCompatActivity {
                         });
                         ad.setNegativeButton("취소", new DialogInterface.OnClickListener() {
                             @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                            }
+                            public void onClick(DialogInterface dialog, int which) {}
                         });
                         ad.show();
                         return true;

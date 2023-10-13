@@ -8,7 +8,7 @@
     <LinearLayout
         android:id="@+id/userSubLayout"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="60dp"
         android:background="@drawable/cat_drawable1"
         android:layout_marginTop="5dp"
         android:layout_marginStart="20dp"
@@ -21,12 +21,15 @@
             android:layout_height="match_parent"
             android:layout_marginStart="10dp"
             android:padding="5dp"
+            android:gravity="center"
             android:orientation="vertical">
 
 
             <TextView
                 android:id="@+id/bmName"
                 android:layout_marginHorizontal="0dp"
+                android:textStyle="bold"
+                android:textSize="8pt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
@@ -47,19 +50,15 @@
             android:layout_weight="1"
             />
         <LinearLayout
+            android:id="@+id/L2"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent">
-            <android.widget.Button
-                android:id="@+id/SubLootgen"
-                android:layout_width="50dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center"
-                android:text="자세히 보기"
-                android:textColor="@color/white"
-                android:background="@drawable/button_drawable5"
-                android:layout_marginEnd="10dp"/>
-        </LinearLayout>
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:padding="5dp"
+            android:gravity="center"
+            android:orientation="vertical">
 
+        </LinearLayout>
 
     </LinearLayout>
 

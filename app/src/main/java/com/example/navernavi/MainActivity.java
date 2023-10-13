@@ -12,6 +12,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.transition.Slide;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -32,9 +34,11 @@ import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.overlay.MultipartPathOverlay;
+import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 
@@ -74,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private  static Handler mHandler = new Handler(Looper.getMainLooper());
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,8 +94,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         SlidingDrawer slidingDrawer = (SlidingDrawer)findViewById(R.id.slidingDrawer);
         slidingDrawer.setVisibility(View.INVISIBLE);
-
-
 
 
         //경유지 추가를 위한 EditText파트
@@ -118,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 for(int i = 0;WaypointList.size()>i;i++) {
                     int finalI = i;
                     EditText searchbar = (EditText) WaypointList.get(i).findViewById(R.id.WayPointEdit);
+                    LinearLayout waypointLayout = (LinearLayout)WaypointList.get(i).findViewById(R.id.WayPointLayout);
                     Button btnDel = (Button) WaypointList.get(i).findViewById(R.id.waypDeleteBtn);
                     btnDel.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -139,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     InputMethodManager imm;
                                     imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                                     imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-                                    searchBar.clearFocus();
                                     focused = finalI;
                                     slidingDrawer.setVisibility(android.view.View.VISIBLE);
                                     slidingDrawer.animateOpen();
@@ -149,12 +152,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 } else {
                                     Toast.makeText(getApplicationContext(),"주소지를 입력해주세요",Toast.LENGTH_SHORT).show();
                                 }
-
                             return false;
                         });
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+//                    searchbar.setOnTouchListener(new View.OnTouchListener() {
+//                        @Override
+//                        public boolean onTouch(View v, MotionEvent event) {
+//                            if(searchbar.hasFocus()) {waypointLayout.setBackgroundResource(R.drawable.text_view_drawable2);}
+//                            else {waypointLayout.setBackgroundResource(R.drawable.text_view_drawable);}
+//                            return false;
+//                        }
+//                    });
                 }
             }
         });
@@ -168,11 +178,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         arvAddr.setText(text.split(":")[3]);
         intentText = text;
         LinearLayout lootGenLayout = (LinearLayout) findViewById(R.id.lootGenLayout);
+        request(text.split(":")[2],1); //dep , arv  Marker setMap
 
-
-        if(true) {
-            request(text.split(":")[2],1);
-        }
 
         Button lootDel = (Button) findViewById(R.id.lootDel);
         lootDel.setOnClickListener(new View.OnClickListener() {
@@ -198,6 +205,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
                 ad.show();
+            }
+        });
+
+        Button btnBack = (Button)findViewById(R.id.btnMap);
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
             }
         });
 
@@ -246,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
         });
 
+
         Button saveBtn = (Button) findViewById(R.id.btnSave);
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -282,12 +298,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         //After Intent Changed
+        LinearLayout appBar = (LinearLayout) findViewById(R.id.appBar);
         if(text.split(":")[0].contains("viewLootOnly")) {
             SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
             String[] lootString = lootShared.getString(text.split(":")[4]+"","").split(":");
             lootGen.setVisibility(View.GONE);
             cardBar2.setVisibility(View.GONE);
             isView = true;
+            appBar.setVisibility(View.VISIBLE);
             final Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -309,6 +327,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             lootGen.setVisibility(View.GONE);
             cardBar2.setVisibility(View.GONE);
             isView = true;
+            appBar.setVisibility(View.VISIBLE);
             try {
                 SharedPreferences lootShared = getSharedPreferences(text.split(":")[1],MODE_PRIVATE);
                 for(int i = 0;lootShared.getAll().size()>i;i++) {
@@ -356,12 +375,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         naverMap.setOnMapClickListener((pointF, latLng) -> {
             InputMethodManager imm;
             imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            SlidingDrawer slidingDrawer = (SlidingDrawer) findViewById(R.id.slidingDrawer);
             if(!isView) {
                 tmpLoc = latLng;
                 if (5>focused) {
                     EditText searchBar = (EditText) WaypointList.get(focused).findViewById(R.id.WayPointEdit);
                     imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
-                    if (searchBar.hasFocus()) {
+                    if (slidingDrawer.isOpened()) {
+                        slidingDrawer.animateClose();
+                    }
+                    else if (searchBar.hasFocus()) {
                         setMark(markerSet.get(focused), tmpLoc, BluePing);
                     }
                 }
@@ -426,6 +449,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     cameraSet(loc,0);
                                 }
                             });
+
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -703,6 +727,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         alertBuilder.show();
     }
 
+
     private void sharedPref(String name) {
         double depX = markerDep.getPosition().latitude;
         double depY = markerDep.getPosition().longitude;
@@ -729,6 +754,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(key,save);
         editor.commit();
+    }
+
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
+        ad.setMessage("정말로 경로 생성을 취소하고 돌아가시겠습니까?");
+        ad.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        if(!isView) ad.show();
+        else finish();
     }
 }
 

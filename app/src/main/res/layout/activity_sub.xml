@@ -105,7 +105,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginBottom="20dp"
-                android:text="정확한 장소명을 기입해주세요\n예) 노량진 에버스핀"
+                android:text="정확한 장소명을 기입해주세요\nex) 노량진 에버스핀"
                 android:textSize="5pt" />
 
             <android.widget.Button

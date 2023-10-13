@@ -6,6 +6,24 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:id="@+id/appBar"
+        android:visibility="gone"
+        android:background="@color/skyblue">
+        <android.widget.Button
+            android:id="@+id/btnMap"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:textColor="@color/white"
+            android:layout_margin="10dp"
+            android:textStyle="bold"
+            android:textSize="14pt"
+            android:text="←"
+            android:background="@drawable/button_drawable2" />
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -75,7 +93,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
-            android:layout_width="298dp"
+            android:layout_width="260dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_marginStart="5dp">
@@ -127,6 +145,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:paddingEnd="20dp"
             android:gravity="center"
             android:layout_weight="1">
             <android.widget.Button
@@ -191,10 +210,7 @@
                 android:id="@+id/contentLinear"
                 android:orientation="vertical"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-            </LinearLayout>
-
+                android:layout_height="wrap_content"/>
         </ScrollView>
 
     </SlidingDrawer>

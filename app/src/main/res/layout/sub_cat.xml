@@ -39,8 +39,7 @@
                 android:textSize="12pt"
                 android:textStyle="bold"
                 android:typeface="normal"
-                android:singleLine="true"
-                tools:ignore="InvalidId" />
+                android:singleLine="true" />
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
