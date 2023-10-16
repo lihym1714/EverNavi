@@ -27,14 +27,14 @@
             android:layout_gravity="center"
             android:orientation="vertical">
 
-            <android.widget.Button
+            <TextView
                 android:id="@+id/catButton"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_marginHorizontal="10dp"
                 android:background="@drawable/button_drawable2"
                 android:text="Loading..."
-                android:textAlignment="textStart"
+                android:gravity="center"
                 android:textColor="@color/black"
                 android:textSize="12pt"
                 android:textStyle="bold"
@@ -57,9 +57,10 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
                     android:textAlignment="center"
+                    android:singleLine="true"
                     android:textStyle="bold"
                     android:layout_marginStart="10dp"
-                    android:textSize="8pt"
+                    android:textSize="7pt"
                     android:text="Loading..."
                     android:gravity="center"/>
                 <TextView
@@ -79,9 +80,20 @@
                     android:textAlignment="center"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:textSize="8pt"
+                    android:textSize="7pt"
+                    android:singleLine="true"
                     android:text="Loading..."
                     android:layout_marginEnd="20dp"/>
+                <TextView
+                    android:id="@+id/addrdep"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"/>
+                <TextView
+                    android:id="@+id/addrarv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"/>
             </LinearLayout>
         </LinearLayout>
         <View

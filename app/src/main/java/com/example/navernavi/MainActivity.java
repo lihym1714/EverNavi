@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private final int RedPing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_red;
     private final int GreenPing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_green;
     private final int BluePing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_blue;
+    private final int YellowPing = com.naver.maps.map.R.drawable.navermap_default_marker_icon_yellow;
 
     private  static Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -144,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                                     imm.hideSoftInputFromWindow(searchBar.getWindowToken(), 0);
                                     focused = finalI;
+                                    searchbar.clearFocus();
                                     slidingDrawer.setVisibility(android.view.View.VISIBLE);
                                     slidingDrawer.animateOpen();
                                 }catch (Exception e) {
@@ -157,14 +159,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-//                    searchbar.setOnTouchListener(new View.OnTouchListener() {
-//                        @Override
-//                        public boolean onTouch(View v, MotionEvent event) {
-//                            if(searchbar.hasFocus()) {waypointLayout.setBackgroundResource(R.drawable.text_view_drawable2);}
-//                            else {waypointLayout.setBackgroundResource(R.drawable.text_view_drawable);}
-//                            return false;
-//                        }
-//                    });
+                    markerSet.get(i).setOnClickListener(new Overlay.OnClickListener() {
+                        @Override
+                        public boolean onClick(@NonNull Overlay overlay) {
+                            Button waypointFix = (Button) findViewById(R.id.wayPointFix);
+                            waypointFix.setVisibility(View.VISIBLE);
+                            cameraSet(markerSet.get(finalI).getPosition(),0);
+                            markerSet.get(finalI).setMap(null);
+                            Marker movingMarker = new Marker();
+                            setMark(movingMarker,markerSet.get(finalI).getPosition(),BluePing);
+
+                            naverMap.addOnCameraChangeListener(new NaverMap.OnCameraChangeListener() {
+                                @Override
+                                public void onCameraChange(int i, boolean b) {
+                                    if(movingMarker.isAdded()) setMark(movingMarker,naverMap.getCameraPosition().target,BluePing);
+                                }
+                            });
+
+                            waypointFix.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    setMark(markerSet.get(finalI),movingMarker.getPosition(),BluePing);
+                                    movingMarker.setMap(null);
+                                    waypointFix.setVisibility(View.GONE);
+                                }
+                            });
+                            return false;
+                        }
+                    });
                 }
             }
         });
@@ -185,16 +207,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         lootDel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences SP = getSharedPreferences(intentText.split(":")[1],MODE_PRIVATE);
-                SharedPreferences.Editor editor = SP.edit();
                 AlertDialog.Builder ad = new AlertDialog.Builder(MainActivity.this);
                 ad.setTitle("경로 삭제");
                 ad.setMessage("정말로 해당 경로를 삭제하시겠습니까?");
                 ad.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        editor.remove(intentText.split(":")[4]);
-                        editor.commit();
+                        if(intentText.split(":")[0].contains("Only")) {
+                            SharedPreferences SP = getSharedPreferences(intentText.split(":")[1],MODE_PRIVATE);
+                            SharedPreferences.Editor editor = SP.edit();
+                            editor.remove(intentText.split(":")[4]);
+                            editor.commit();
+                        } else {
+                            SharedPreferences SP = getSharedPreferences("Category",MODE_PRIVATE);
+                            SharedPreferences.Editor editor = SP.edit();
+                            String spString = SP.getString(intentText.split(":")[4],"");
+                            SharedPreferences SP2 = getSharedPreferences(spString,MODE_PRIVATE);
+                            SharedPreferences.Editor editor2 = SP2.edit();
+                            editor.remove(intentText.split(":")[4]);
+                            editor.commit();
+                            editor2.clear();
+                            editor2.commit();
+                        }
                         Intent intent = new Intent(MainActivity.this,UserActivity.class);
                         startActivity(intent);
                     }
@@ -364,6 +398,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MainActivity.naverMap = naverMap;
 
         naverMap.setLocationSource(locationSource);
+        naverMap.getUiSettings().setRotateGesturesEnabled(false);
         naverMap.getUiSettings().setZoomControlEnabled(false);
         naverMap.getUiSettings().setLocationButtonEnabled(true);
         naverMap.setLocationTrackingMode(LocationTrackingMode.NoFollow);
@@ -396,7 +431,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         AddrSearchRepository.getINSTANCE().getAddressList(addr, 1, size, new AddrSearchRepository.AddressResponseListener() {
             @Override
             public void onSuccessResponse(Location locationData) {
-
                 if (div == 0) {
                     try {
                         List<Location.Document> documents = locationData.documentsList;

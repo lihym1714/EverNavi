@@ -36,6 +36,22 @@
             android:id="@+id/map_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+            <LinearLayout
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="50dp"
+                android:gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <android.widget.Button
+                    android:id="@+id/wayPointFix"
+                    android:visibility="gone"
+                    android:text="지정"
+                    android:textColor="@color/white"
+                    android:background="@drawable/button_drawable4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
 
             <LinearLayout
                 android:id="@+id/lootGenLayout"

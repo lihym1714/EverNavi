@@ -84,12 +84,12 @@ public class UserActivity extends AppCompatActivity {
                         .setArrowOrientation(ArrowOrientation.TOP)
                         .setArrowPosition(0.9f)
                         .setArrowVisible(false)
-                        .setWidthRatio(0.8f)
+                        .setWidthRatio(0.85f)
                         .setHeight(80)
                         .setTextSize(14f)
                         .setCornerRadius(4f)
                         .setAlpha(0.9f)
-                        .setText("박스를 누르면 해당 경로를 확인할 수 있습니다.\n박스를 길게 누르면 해당 경로를 삭제할 수 있습니다.")
+                        .setText("박스를 누르면 해당 경로를 지도에서 확인할 수 있습니다.\n박스를 길게 누르면 해당 경로를 삭제할 수 있습니다.")
                         .setAutoDismissDuration(2500L)
                         .setBalloonAnimation(BalloonAnimation.FADE)
                         .build();
@@ -119,9 +119,11 @@ public class UserActivity extends AppCompatActivity {
             try {
                 categoriesSub.add(new Sub_category(getApplicationContext()));
                 scr_layout.addView(categoriesSub.get(i));
-                Button btn = (Button)categoriesSub.get(i).findViewById(R.id.catButton);
+                TextView btn = (TextView) categoriesSub.get(i).findViewById(R.id.catButton);
                 TextView dep = (TextView) categoriesSub.get(i).findViewById(R.id.deptext);
                 TextView arv = (TextView) categoriesSub.get(i).findViewById(R.id.arvtext);
+                TextView addrDep = (TextView) categoriesSub.get(i).findViewById(R.id.addrdep);
+                TextView addrArv = (TextView) categoriesSub.get(i).findViewById(R.id.addrarv);
 
                 if(!sharedPreferences.getAll().keySet().contains(i+"")) {++tmpI;}
 
@@ -129,6 +131,8 @@ public class UserActivity extends AppCompatActivity {
                 btn.setText(SP.split(":")[0]);
                 dep.setText(SP.split(":")[1]);
                 arv.setText(SP.split(":")[2]);
+                addrDep.setText(SP.split(":")[3]);
+                addrArv.setText(SP.split(":")[4]);
 
                 SharedPreferences loot = getSharedPreferences(SP.split(":")[0],MODE_PRIVATE);
                 LinearLayout layout = (LinearLayout) categoriesSub.get(i).findViewById(R.id.catlayout);
@@ -154,8 +158,8 @@ public class UserActivity extends AppCompatActivity {
                     class NewRunnable implements Runnable {
                         @Override
                         public void run() {
-                            String[] Dep = requestKeyword(dep.getText().toString()).split(",");
-                            String[] Arv = requestKeyword(arv.getText().toString()).split(",");
+                            String[] Dep = requestKeyword(addrDep.getText().toString()).split(",");
+                            String[] Arv = requestKeyword(addrArv.getText().toString()).split(",");
                             String waypoints = "";
                             try {
                                 if(SP2.split(":")[3].length() > 0) waypoints = SP2.split(":")[3];
@@ -179,26 +183,27 @@ public class UserActivity extends AppCompatActivity {
         for(int i = 0;categoriesSub.size()>i;i++) {
             final int finalI = i;
             LinearLayout SubCatLayout = (LinearLayout) categoriesSub.get(i).findViewById(R.id.SubCatLayout);
-            Button name = (Button)categoriesSub.get(finalI).findViewById(R.id.catButton);
-            TextView dep = categoriesSub.get(finalI).findViewById(R.id.deptext);
-            TextView arv = categoriesSub.get(finalI).findViewById(R.id.arvtext);
+            TextView name = (TextView) categoriesSub.get(finalI).findViewById(R.id.catButton);
+            TextView dep = categoriesSub.get(finalI).findViewById(R.id.addrdep);
+            TextView arv = categoriesSub.get(finalI).findViewById(R.id.addrarv);
+            SharedPreferences Sp = getSharedPreferences("Category",MODE_PRIVATE);
+            SharedPreferences Sp2 = getSharedPreferences(name.getText().toString(),MODE_PRIVATE);
+            if(!Sp.getAll().keySet().contains(i+"")) {++tmpI;}
+            int finalTmpI = tmpI;
             SubCatLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
                         Intent intent = new Intent(UserActivity.this,MainActivity.class);
-                        String input = "viewLoot:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString();
+                        String input = "viewLoot:"+name.getText().toString()+":"+dep.getText().toString()+":"+arv.getText().toString()+":"+(finalI+finalTmpI);
                         intent.putExtra("key",input);
                         startActivity(intent);
-                    }catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             });
-            SharedPreferences Sp = getSharedPreferences("Category",MODE_PRIVATE);
-            SharedPreferences Sp2 = getSharedPreferences(name.getText().toString(),MODE_PRIVATE);
-            if(!Sp.getAll().keySet().contains(i+"")) {++tmpI;}
-            int finalTmpI = tmpI;
+
             SubCatLayout.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
